@@ -69,22 +69,26 @@ var SelectorSequences = React.createClass({
     this.setState({
       activeIndex: clickedIndex
     });
+    
+    this.props.onSequenceClick(
+      clickedIndex
+    );
   },
   
   render: function() {
-    var data = this.props.data;
+    var selectorSequences = this.props.sequences;
       
-    if (!data || !data.selectorSequences || !data.selectorSequences.length)
+    if (!selectorSequences || !selectorSequences.length)
       return null
       
     var
-      count = data.selectorSequences.length,
+      count = selectorSequences.length,
       sequences = new Array(count),
       sequencesPlural = "Sequence" + (count !== 1 ? "s" : "")
       self = this
     ;
       
-    data.selectorSequences.forEach(function (sequence, index) {
+    selectorSequences.forEach(function (sequence, index) {
       var className = self.state.activeIndex === index ? "active" : "";
       
       sequences[index] = (
@@ -112,77 +116,264 @@ var SelectorSequences = React.createClass({
   }
 });
 
-var FormattedSelector = React.createClass({
-  render: function() {
-    var data = this.props.data;
+var FormattedSelectorValidation = React.createClass({
+  componentDidMount: function() {
+    console.info("DID MOUNT");
     
-    if (!data || !data.selectors || !data.selectors.length)
-      return null;
+    var domNode = ReactDOM.findDOMNode(this)
+    
+    if (!domNode)
+      return;
       
-    var
-      formatted = [],
-      margin = 0,
-      marginIncrement = 6
+    this.props.onValidInput(domNode.className === "alert alert-success");
+  },
+  
+  render: function() {    
+    var 
+      invalid = [],
+      elements = this.props.elements,
+      elementCount = elements.length,
+      pseudoElements = [],
+      pseudoNotAtEnd = [],
+      self = this
     ;
     
-    data.selectors.forEach(function(selector, index) {
-      var type;
+    elements.forEach(function(selectors, index) {
+      var 
+        currentElement = index + 1,
+        types = [],
+        ids = []
+      ;
       
-      try {
-        type = s.getType(selector);
-      }
-      catch (e) {
-        type = "invalid";
-      }
-      
-      var className = "selector " + type;
-      
-      if (type === "combinator") {
-        var brKey = 9999 - index;
-        formatted.push(<br key={brKey} />);
-        
-        if (selector.trim() === "") {
-          className += " space";
-          margin += marginIncrement;
+      selectors.forEach(function(selector, subIndex) {
+        if (selector.type === "type" || selector.type === "universal")
+          types.push(selector);
+        else if (selector.type === "id" && ids.indexOf(selector.selector) === -1)
+          ids.push(selector.selector);
+        else if (selector.type === "pseudo-element") {
+          pseudoElements.push(selector.selector);
+          
+          if (subIndex !== selectors.length - 1 || index != elementCount - 1)
+            pseudoNotAtEnd.push(selector.selector);
         }
+      });
       
-        var style = { marginLeft: margin + "px" }
+      if (types.length > 1) {
+        var
+          t1 = types[0].selector,
+          t1Class = "selector " + types[0].type,
+          t2 = types[1].selector,
+          t2Class = "selector " + types[1].type,
+          more = types.length > 2 ? types.length - 2 : false
+        ;
+          
+        if (!more)
+          invalid.push(
+            <li>
+              Selectors should only ever include <strong>one</strong> type <em>or</em> universal selector.
+              <br/>
+              <em className="text-info">Element {currentElement}'s selector includes both <code className={t1Class}>{t1}</code> and <code className={t2Class}>{t2}</code>.</em>
+            </li>
+          );
+          
+        else
+          invalid.push(
+            <li>
+              Selectors should only ever include <strong>one</strong> type <em>or</em> universal selector.
+              <br/>
+              <em className="text-info">Element {currentElement}'s selector includes <code className={t1Class}>{t1}</code>, <code className={t2Class}>{t2}</code> and {more} other(s).</em>
+            </li>
+          );
+      }
       
-        formatted.push(
-          <span
-            className={className}
-            key={index}
-            style={style}
-          >
-            <span>{selector}</span>
-          </span>
-        );
-      } else {
-        formatted.push(
-          <span
-            className={className}
-            key={index}
-          >
-            {selector}
-          </span>
-        );
+      if (ids.length > 1) {
+        var 
+          id1 = ids[0],
+          id2 = ids[1],
+          more = ids.length > 2 ? ids.length - 2 : false
+        ;
+        
+        if (!more)
+          invalid.push(
+            <li>
+              Selectors should only ever include <strong>one</strong> unique<sup>&#8224;</sup> ID selector.
+              <br/>
+              <em className="text-info">Element {currentElement}'s selector includes both <code className="selector id">{id1}</code> and <code className="selector id">{id2}</code>.</em>
+              <br/>
+              <small className="text-muted"><sup>&#8224;</sup> Note that repeating the same ID multiple times <em>is</em> valid.</small>
+            </li>
+          );
+        
+        else
+          invalid.push(
+            <li>
+              Selectors should only ever include <strong>one</strong> ID selector.
+              <br/>
+              <em className="text-info">Element {currentElement}'s selector includes <code className="selector id">{id1}</code>, <code className="selector id">{id2}</code> and {more} other(s).</em>
+              <br/>
+              <small className="text-muted">Note that repeating the same ID multiple times <em>is</em> valid.</small>
+            </li>
+          );
       }
     });
     
+    if (pseudoElements.length > 1) {
+      var 
+        pe1 = pseudoElements[0],
+        pe2 = pseudoElements[1],
+        more = pseudoElements.length > 2 ? pseudoElements.length - 2 : false
+      ;
+      
+      if (!more)
+        invalid.push(
+          <li>
+            Selectors should only ever include <strong>one</strong> pseudo-element selector.
+            <br/>
+            <em className="text-info">The selector sequence includes both <code className="selector pseudo-element">{pe1}</code> and <code className="selector pseudo-element">{pe2}</code>.</em>
+          </li>
+        );
+      
+      else
+        invalid.push(
+          <li>
+            Selector sequences should only ever include <strong>one</strong> pseudo-element selector.
+            <br/>
+            <em className="text-info">The selector sequence includes <code className="selector pseudo-element">{pe1}</code>, <code className="selector pseudo-element">{pe2}</code> and {more} other(s).</em>
+          </li>
+        );
+    }
+    
+    if (pseudoNotAtEnd.length && pseudoElements.length === 1) {
+      var pe = pseudoNotAtEnd[pseudoNotAtEnd.length - 1];
+      
+      invalid.push(
+        <li>
+          Pseudo-elements must be placed at the very end of a selector sequence.
+          <br/>
+          <em className="text-info"><code className="selector pseudo-element">{pe}</code> is not the final selector attached to Element {elementCount}.</em>
+        </li>
+      )
+    }
+    
+    if (!invalid.length) {          
+      return (
+        <div className="alert alert-success">
+          <p><i className="fa fa-check"></i> This selector sequence is valid and will select <strong>Element {elementCount}</strong>.</p>
+        </div>
+      )
+    }
+      
+    var errorCount = invalid.length;
+    
     return (
-      <pre id="formatted-selector">{formatted}</pre>
+      <div className="alert alert-danger">
+        <p><i className="fa fa-warning"></i> This selector sequence is not valid (<strong>{errorCount} errors</strong>):</p>
+        <div className="alert alert-warning">
+          <ol className="text-danger">{invalid}</ol>
+        </div>
+      </div>
     )
   }
-})
+});
+
+var FormattedElement = React.createClass({
+  render: function() {
+    var selectors = this.props.selectors;
+      
+    var
+      formatted = new Array(selectors.length),
+      marginLeft = { marginLeft: this.props.margin + "px" }
+    ;
+    
+    selectors.forEach(function(s, index) {
+      var
+        className = "selector " + s.type + (s.type === "combinator" && s.selector === " " ? " space" : ""),
+        selector = s.selector
+      ;
+      
+      formatted[index] = (
+        <span className={className} key={index}>
+          {selector}
+        </span>
+      )
+    });
+    
+    return (
+      <div className="formatted-element" style={marginLeft}>
+        {formatted}
+      </div>
+    )
+  }
+});
+
+var FormattedSelectorSequence = React.createClass({
+  handleValidInput: function(valid) {
+    console.info(valid);
+  },
+  
+  render: function() {
+    var selectors = this.props.selectors;
+    
+    if (!selectors || !selectors.elements || !selectors.elements.detailed || !selectors.elements.detailed.length)
+      return (<div id="formatted-selector-area"></div>);
+      
+    var
+      onValidInput = this.props.onValidInput,
+      elements = selectors.elements.detailed,
+      formatted = new Array(elements.length),
+      margin = 0,
+      marginIncrement = 6,
+      elementCount = elements.length
+    ;
+    
+    elements.forEach(function(selectors, index) {
+      var first = elements[index][0];
+      
+      if (first.type === "combinator" && first.selector === " ")
+        margin += marginIncrement;
+      
+      formatted[index] = (
+        <FormattedElement margin={margin} selectors={selectors} index={index} total={elementCount} key={index} />
+      );
+    });
+    
+    return (
+      <div id="formatted-selector-area">
+        <pre>{formatted}</pre>
+        <FormattedSelectorValidation elements={elements} onValidInput={this.handleValidInput} />
+      </div>
+    )
+  }
+});
+
+var Deconstructed = React.createClass({
+  render: function() {
+    var elements = this.props.elements;
+    
+    if (!elements || !elements.length)
+      return null;
+      
+    return (
+      <div>Foo</div>
+    )
+  }
+});
 
 var SelectorsIOMain = React.createClass({
   updateTimer: null,
   
   getInitialState: function() {
+    var data = new core.SelectorsIO("div#foo[role=main] > *.bar:hover [href^=\"#\"]::before, div#foo[role=main] > *.bar:hover [href^=\"#\"]::after");
+    data.changeActiveSelectorSequence(0);
+    
     return {
       activeIndex: 0,
       input: '',
-      data: new core.SelectorsIO("div#foo[role=main] > *.bar:hover [href^=\"#\"]::before, div#foo[role=main] > *.bar:hover [href^=\"#\"]::after")
+      inputCooldownActive: false,
+      data: data,
+      canDeconstruct: false,
+      sequences: data.selectorSequences,
+      selectors: data.selectors
     }
   },
   
@@ -195,15 +386,36 @@ var SelectorsIOMain = React.createClass({
       window.clearTimeout(this.updateTimer);
       this.updateTimer = null;
     }
+    else {
+      this.setState({
+        selectors: null,
+      });
+    }
     
     var self = this;
     
     this.updateTimer = setTimeout(function() {
+      var data = new core.SelectorsIO(input);
+      
+      self.updateTimer = null;
+      
       self.setState({
         activeIndex: 0,
-        data: new core.SelectorsIO(input)
+        data: data,
+        sequences: data.selectorSequences,
+        canDeconstruct: false
       });
+      
+      self.handleSequenceClick(0);
     }, 1000);
+  },
+  
+  handleSequenceClick: function(index) {    
+    this.state.data.changeActiveSelectorSequence(index);
+    
+    this.setState({
+      selectors: this.state.data.selectors
+    });
   },
 
   render: function() {
@@ -218,12 +430,18 @@ var SelectorsIOMain = React.createClass({
         <div className="row">
           <div className="col-lg-4">
             <nav id="sequence-list">
-              <SelectorSequences data={this.state.data} />
+              <SelectorSequences
+                onSequenceClick={this.handleSequenceClick}
+                sequences={this.state.sequences}
+              />
             </nav>
           </div>
           <div className="col-lg-8">
             <section id="deconstructed-area">
-              <FormattedSelector data={this.state.data} />
+              <FormattedSelectorSequence
+                selectors={this.state.selectors}
+                onValidInput={this.deconstruct}
+              />
             </section>
           </div>
         </div>

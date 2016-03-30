@@ -33,17 +33,13 @@
   
   &.combinator {
     color: #1976D2;
-    
-    span {
-      display: inline-block;
-      min-width: 16px;
-      text-align: center;
-    }
+    min-width: 16px;
+    text-align: center;
     
     &.space {
       font-size: 0;
       
-      span::before {
+      &::before {
         color: #B0BEC5;
         content: '\2420';
         font-size: 16px;
@@ -142,31 +138,42 @@
 }
 
 #deconstructed-area {
-  #formatted-selector {
-    counter-reset: formatted;
-    font-size: 20px;
-    
-    > span:first-child,
-    .selector.combinator {
-      counter-increment: formatted;
+  #formatted-selector-area {
+    pre {
+      counter-reset: formatted;
+      font-size: 16px;
       
-      &::before {
-        color: #90A4AE;
-        content: 'Element ' counter(formatted);
-        font-size: 12px;
-        margin-right: 6px;
+      .formatted-element {
+        counter-increment: formatted;
+        
+        &::before {
+          color: #90A4AE;
+          content: 'Element ' counter(formatted);
+          font-size: 12px;
+          margin-right: 6px;
+        }
+      
+        .selector.combinator {
+          margin-right: 2px;
+          min-width: 24px;
+        }
       }
     }
     
-    .selector.combinator {
-      span {
-        min-width: 24px;
-        text-align: left;
-      }
-      
-      &.space {
-        em::before {
-          font-size: 20px;
+    .alert {
+      .alert {
+        margin: 10px 0 0;
+        
+        ol {
+          margin-bottom: 0;
+          
+          li {
+            margin-bottom: 10px;
+            
+            &:last-child {
+              margin-bottom: 0;
+            }
+          }
         }
       }
     }

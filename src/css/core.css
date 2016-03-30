@@ -26,16 +26,13 @@
 }
 .selector.combinator {
   color: #1976D2;
-}
-.selector.combinator span {
-  display: inline-block;
   min-width: 16px;
   text-align: center;
 }
 .selector.combinator.space {
   font-size: 0;
 }
-.selector.combinator.space span::before {
+.selector.combinator.space::before {
   color: #B0BEC5;
   content: '\2420';
   font-size: 16px;
@@ -117,25 +114,32 @@
   text-decoration: underline;
   padding-top: 4px;
 }
-#deconstructed-area #formatted-selector {
+#deconstructed-area #formatted-selector-area pre {
   counter-reset: formatted;
-  font-size: 20px;
+  font-size: 16px;
 }
-#deconstructed-area #formatted-selector > span:first-child,
-#deconstructed-area #formatted-selector .selector.combinator {
+#deconstructed-area #formatted-selector-area pre .formatted-element {
   counter-increment: formatted;
 }
-#deconstructed-area #formatted-selector > span:first-child::before,
-#deconstructed-area #formatted-selector .selector.combinator::before {
+#deconstructed-area #formatted-selector-area pre .formatted-element::before {
   color: #90A4AE;
   content: 'Element ' counter(formatted);
   font-size: 12px;
   margin-right: 6px;
 }
-#deconstructed-area #formatted-selector .selector.combinator span {
+#deconstructed-area #formatted-selector-area pre .formatted-element .selector.combinator {
+  margin-right: 2px;
   min-width: 24px;
-  text-align: left;
 }
-#deconstructed-area #formatted-selector .selector.combinator.space em::before {
-  font-size: 20px;
+#deconstructed-area #formatted-selector-area .alert .alert {
+  margin: 10px 0 0;
+}
+#deconstructed-area #formatted-selector-area .alert .alert ol {
+  margin-bottom: 0;
+}
+#deconstructed-area #formatted-selector-area .alert .alert ol li {
+  margin-bottom: 10px;
+}
+#deconstructed-area #formatted-selector-area .alert .alert ol li:last-child {
+  margin-bottom: 0;
 }
