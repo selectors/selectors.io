@@ -118,20 +118,19 @@ var SelectorSequences = React.createClass({
 });
 
 var FormattedSelectorValidation = React.createClass({
-  componentDidMount: function() {
-    console.info("DID MOUNT");
-    
+  componentDidMount: function() {    
     var domNode = ReactDOM.findDOMNode(this)
     
     if (!domNode)
       return;
       
-    this.props.onValidInput(domNode.className === "alert alert-success");
+    this.props.onValidInput(domNode.className === "alert alert-success" || domNode.className === "has-warning");
   },
   
   render: function() {    
     var 
       invalid = [],
+      invalidHTML = [],
       elements = this.props.elements,
       elementCount = elements.length,
       pseudoElements = [],
@@ -143,10 +142,19 @@ var FormattedSelectorValidation = React.createClass({
       var 
         currentElement = index + 1,
         types = [],
-        ids = []
+        ids = [],
+        invalidHTMLType = null,
+        invalidHTMLAttributes = []
       ;
       
-      selectors.forEach(function(selector, subIndex) {
+      selectors.forEach(function(selector, subIndex) {   
+        if (selector.isValid === false) {
+          if (selector.type === "type")
+            invalidHTMLType = selector;
+          else if (selector.type === "attribute")
+            invalidHTMLAttributes.push(selector);
+        }
+             
         if (selector.type === "type" || selector.type === "universal")
           types.push(selector);
         else if (selector.type === "id" && ids.indexOf(selector.selector) === -1)
@@ -158,6 +166,62 @@ var FormattedSelectorValidation = React.createClass({
             pseudoNotAtEnd.push(selector.selector);
         }
       });
+      
+      if (invalidHTMLType) {
+        invalidHTML.push(
+          <li>
+             Unknown type detected.
+            <br/>
+            <em className="text-info">Element {currentElement}'s selector includes unknown type <code className="selector type">{invalidHTMLType.selector}</code>.</em>
+          </li>
+        )
+      }
+      
+      if (invalidHTMLAttributes.length) {
+        var  
+          a1 = invalidHTMLAttributes[0]
+        ;
+        
+        if (invalidHTMLAttributes.length > 1) {
+          var
+            a2 = invalidHTMLAttributes[1],
+            more = invalidHTMLAttributes.length > 2 ? invalidHTMLAttributes.length - 2 : false
+          ;
+        
+          if (!more)
+            invalid.push(
+              <li>
+                Multiple unknown attributes detected.<sup>&#8224;</sup>
+                <br/>
+                <em className="text-info">Element {currentElement}'s selector includes both <code className="selector attrbute">{a1.properties.name}</code> and <code className="selector attribute">{a2.properties.name}</code>.</em>
+              <br/>
+              <small className="text-muted"><sup>&#8224;</sup> If this is a custom attribute, you should prefix it with <code>&ldquo;data-&rdquo;</code> (like <code className="selector attribute">data-{a1.properties.name}</code>).</small>
+              </li>
+            );
+          
+          else
+            invalid.push(
+              <li>
+                Multiple unknown attributes detected.<sup>&#8224;</sup>
+                <br/>
+                <em className="text-info">Element {currentElement}'s selector includes <code className="selector attrbute">{a1.properties.name}</code>, <code className="selector attribute">{a2.properties.name}</code> and {more} other(s).</em>
+              <br/>
+              <small className="text-muted"><sup>&#8224;</sup> If this is a custom attribute, you should prefix it with <code>&ldquo;data-&rdquo;</code> (like <code className="selector attribute">data-{a1.properties.name}</code>).</small>
+              </li>
+            );
+        }
+        else {
+          invalidHTML.push(
+            <li>
+              Unknown attribute detected.<sup>&#8224;</sup>
+              <br/>
+              <em className="text-info">Element {currentElement}'s selector includes <code className="selector attribute">{a1.properties.name}</code>.</em>
+              <br/>
+              <small className="text-muted"><sup>&#8224;</sup> If this is a custom attribute, you should prefix it with <code>&ldquo;data-&rdquo;</code> (like <code className="selector attribute">data-{a1.properties.name}</code>).</small>
+            </li>
+          )
+        }
+      }
       
       if (types.length > 1) {
         var
@@ -256,21 +320,40 @@ var FormattedSelectorValidation = React.createClass({
       )
     }
     
-    if (!invalid.length) {          
+    if (!invalid.length && !invalidHTML.length) {          
       return (
         <div className="alert alert-success">
           <p><i className="fa fa-check"></i> This selector sequence is valid and will select <strong>Element {elementCount}</strong>.</p>
         </div>
       )
     }
-      
-    var errorCount = invalid.length;
+    
+    else if (invalid.length) {
+      var errorCountText = "error" + (invalid.length > 1 ? "s" : "");
+    
+      return (
+        <div className="alert alert-danger">
+          <p><i className="fa fa-warning"></i> This selector sequence is not valid (<strong>{invalid.length} {errorCountText})</strong>):</p>
+          <div className="alert alert-warning">
+            <ol className="text-danger">{invalid}</ol>
+          </div>
+        </div>
+      )
+    }
+    
+    var warningCountText = "warning" + (invalidHTML.length > 1 ? "s" : "");
     
     return (
-      <div className="alert alert-danger">
-        <p><i className="fa fa-warning"></i> This selector sequence is not valid (<strong>{errorCount} errors</strong>):</p>
+      <div className="has-warning">
+        <div className="alert alert-success">
+          <p><i className="fa fa-check"></i> This selector sequence is valid and will select <strong>Element {elementCount}</strong>.</p>
+        </div>
         <div className="alert alert-warning">
-          <ol className="text-danger">{invalid}</ol>
+          <p><i className="fa fa-warning"></i> This doesn't conform to <a href="https://www.w3.org/TR/html5/">HTML5</a>, <a href="https://www.w3.org/TR/SVG11/">SVG1.1</a> or <a href="https://www.w3.org/TR/MathML3/">MathML3</a><sup>&#8224;</sup>. (<strong>{invalidHTML.length} {warningCountText}</strong>):</p>
+          <div className="alert">
+            <ol className="text-warning">{invalidHTML}</ol>
+          </div>
+          <p className="text-muted"><sup>&#8224;</sup> If you're not using this with HTML, SVG or MathML, you can ignore this warning box.</p>
         </div>
       </div>
     )
@@ -628,7 +711,6 @@ var SelectorsIOMain = React.createClass({
           </div>
         );
         
-      console.warn(this.state.canDeconstruct, this.state.selectors);
       if (this.state.canDeconstruct && this.state.selectors)
         deconstruction = (
           <article id="deconstruction-summary">
@@ -660,10 +742,10 @@ var SelectorsIOMain = React.createClass({
         
       deconstructionPane = (
         <div className="row">
-          <div className="col-lg-4">
+          <div className="col-md-4">
             {selectorSequences}
           </div>
-          <div className="col-lg-8">
+          <div className="col-md-8">
             {formattedSelectorSequence}
             {deconstruction}
           </div>
@@ -673,7 +755,7 @@ var SelectorsIOMain = React.createClass({
     else {
       deconstructionPane = (
         <div className="row">
-          <div className="col-lg-12">
+          <div className="col-md-12">
             <div className="alert alert-info">
               <i className="fa fa-info"></i> Type or paste in any CSS selector into the textarea above.
             </div>

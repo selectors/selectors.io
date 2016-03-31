@@ -88,7 +88,7 @@ code {
 #selector-input span.cooldown {
   bottom: -20px;
   color: #90A4AE;
-  font-size: 12px;
+  font-size: 14px;
   position: absolute;
   right: 0;
   opacity: 0;
@@ -101,9 +101,6 @@ code {
   opacity: 1;
 }
 #sequence-list {
-  border-right: 1px solid #bdbdbd;
-  margin-left: 32px;
-  margin-right: -15px;
   padding: 10px 0;
 }
 #sequence-list dl {
@@ -119,12 +116,11 @@ code {
   padding: 0;
 }
 #sequence-list ul li {
-  border-right: 1px solid #bdbdbd;
   cursor: pointer;
   font-family: 'Source Code Pro', monospace;
-  font-size: 12px;
-  margin: 5px -1px 5px 0;
-  padding: 5px 6px 5px 7px;
+  font-size: 14px;
+  margin: 5px 0;
+  padding: 4px 6px;
   position: relative;
   transition: background 0.1s;
 }
@@ -144,8 +140,6 @@ code {
 }
 #sequence-list ul li.active {
   background: #fafafa;
-  border: 1px solid #bdbdbd;
-  border-right: 1px dotted #bdbdbd;
   color: #000;
   cursor: default;
   padding: 4px 6px;
@@ -155,6 +149,39 @@ code {
   left: -32px;
   text-decoration: underline;
   padding-top: 4px;
+}
+@media (max-width: 991px) {
+  #logo h1 {
+    font-size: 26px;
+    line-height: 64px;
+    padding: 0;
+  }
+  #logo p {
+    display: none;
+  }
+  #sequence-list ul li {
+    margin-left: 32px;
+  }
+}
+@media (min-width: 992px) {
+  #sequence-list {
+    border-right: 1px solid #bdbdbd;
+    margin-left: 32px;
+    margin-right: -15px;
+  }
+  #sequence-list ul li {
+    border-right: 1px solid #bdbdbd;
+    margin: 5px -1px 5px 0;
+    padding: 5px 6px 5px 7px;
+  }
+  #sequence-list ul li.active {
+    background: #fafafa;
+    border: 1px solid #bdbdbd;
+    border-right: 1px dotted #bdbdbd;
+    color: #000;
+    cursor: default;
+    padding: 4px 6px;
+  }
 }
 #deconstructed-area #formatted-selector-area pre {
   counter-reset: formatted;
@@ -173,6 +200,9 @@ code {
   margin-right: 2px;
   min-width: 24px;
 }
+#deconstructed-area #formatted-selector-area .alert {
+  margin-bottom: 10px;
+}
 #deconstructed-area #formatted-selector-area .alert .alert {
   margin: 10px 0 0;
 }
@@ -184,4 +214,12 @@ code {
 }
 #deconstructed-area #formatted-selector-area .alert .alert ol li:last-child {
   margin-bottom: 0;
+}
+#deconstructed-area #formatted-selector-area .alert.alert-warning .alert {
+  margin-top: 0;
+}
+#foot {
+  border-top: 1px solid #eee;
+  margin: 0 0 10px;
+  padding: 10px 0;
 }
