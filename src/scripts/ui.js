@@ -46,6 +46,7 @@ var SelectorInput = React.createClass({
     return (
       <form>
         <textarea
+          autoFocus
           className="form-control"
           placeholder="Enter your CSS selector here..."
           value={this.props.input}
@@ -308,7 +309,7 @@ var FormattedElement = React.createClass({
 
 var FormattedSelectorSequence = React.createClass({
   handleValidInput: function(valid) {
-    console.info(valid);
+    this.props.onValidInput(valid);
   },
   
   render: function() {
@@ -346,15 +347,198 @@ var FormattedSelectorSequence = React.createClass({
   }
 });
 
-var Deconstructed = React.createClass({
+var SelectorSequenceSummary = React.createClass({
   render: function() {
-    var elements = this.props.elements;
+    var selectors = this.props.selectors;
     
-    if (!elements || !elements.length)
-      return null;
+    if (!selectors || !selectors.elements || !selectors.elements.detailed || !selectors.elements.detailed.length)
+      return (<p className="text-muted">Unable to generate a summary.</p>);
+    
+    var
+      elements = elements = selectors.elements.detailed,
+      summary = []
+    ;
+    
+    elements.reverse().forEach(function(selectors, index) {
+      var
+        elementSummary = [],
+        elementRef = elements.length - index,
+        lastSelector = selectors[selectors.length - 1],
+        combinator = null,
+        type = null,
+        id = null,
+        classes = [],
+        attributes = [],
+        pseudoClasses = [],
+        negation = [],
+        pseudoElement = lastSelector.type === "pseudo-element" ? lastSelector : false,
+        r = {}
+      ;
+      
+      selectors.forEach(function(selector, subindex) {
+        if (!(pseudoElement && subindex === selectors.length - 1)) {
+          var simpleSelector = selector.selector.trim();
+          
+          switch (selector.type) {
+            case "combinator":
+              combinator = simpleSelector ? simpleSelector : " ";
+              break;
+            case "type":
+            case "universal":
+              type = simpleSelector;
+              break;
+            case "id":
+              id = simpleSelector;
+              break;
+            case "class":
+              classes.push(simpleSelector);
+              break;
+            case "attribute":
+              attributes.push(selector);
+              break;
+            case "pseudo-class":
+              pseudoClasses.push(selector);
+              break;
+            case "negation":
+              negation.push(selector);
+              break;
+            default:
+              console.warn("UNKNOWN TYPE", selector.type, selector);
+              break;
+          }
+        }
+      });
+      
+      if (pseudoElement)
+        r.prefix = <span>This applies the <code className="selector pseudo-element">{pseudoElement.selector}</code> pseudo-element to</span>;
+      else if (elements.length - index === elements.length)
+        r.prefix = <span>This selects</span>
+      
+      if (type && type !== "*")
+        r.type = <span>any <code className="selector type">&lt;{type}&gt;</code> element</span>;
+      else
+        r.type = <span>any element</span>;
+        
+      if (id)
+        r.id = <span>whose unique <code>id</code> attribute is exactly <code className="selector id">{id}</code></span>
+        
+      if (classes.length) {
+        var classesText = "";
+        
+        if (id)
+          classesText += ", and ";
+          
+        classesText += "whose <code>class</code> attribute contains "
+        
+        classes.forEach(function(className, index) {
+          if (index > 0)
+            classesText += (index === classes.length - 1 ? " and " : ", ")
+            
+          classesText += "<code class='selector class'>" + className + "</code>";
+        });
+          
+        classesText = {__html: classesText};
+        r.classes = <span dangerouslySetInnerHTML={classesText}></span>;
+      }
+      
+      if (attributes.length) {
+        var attributesText = "";
+        
+        if (id || classes.length)
+          attributesText += ", and ";
+        
+        attributes.forEach(function(attribute, index) {
+          if (index > 0)
+            attributesText += (index === classes.length - 1 ? " and " : ", ")
+            
+          var properties = attribute.properties;
+          
+          if (properties.symbol && properties.value) {
+            attributesText += "whose ";
+          }
+          else {
+            attributesText += "which has a "
+          }
+            
+          if (properties.namespace)
+              attributesText += "<code>" + properties.namespace + "</code>-namespaced ";
+            
+          attributesText += "<code class='selector attribute'>" + properties.name + "</code> attribute";
+          
+          if (properties.symbol && properties.value) {
+            attributesText += "'s value "
+            
+            switch (properties.symbol) {
+              case "=":
+                attributesText += "is exactly <code>&ldquo;" + properties.value + "&rdquo;</code>";
+                break;
+              case "~=":
+                attributesText += "is a whitespace-separated list of words containing <code>&ldquo;" + properties.value + "&rdquo;</code>";
+                break;
+              case "|=":
+                attributesText += "is exactly <code>&ldquo;" + properties.value + "&rdquo;</code> or is that followed by a hyphen character (<code>&ldquo;" + properties.value + "-&rdquo;</code>)";
+                break;
+              case "^=":
+                attributesText += "is prefixed (begins) with <code>&ldquo;" + properties.value + "&#8230;&rdquo;</code>";
+                break;
+              case "$=":
+                attributesText += "is suffixed (ends) with <code>&ldquo;" + properties.value + "&#8230;&rdquo;</code>";
+                break;
+              case "*=":
+                attributesText += "contains <code>&ldquo;" + properties.value + "&rdquo;</code>";
+                break;
+            }
+          }
+        });
+          
+        attributesText = {__html: attributesText};
+        r.attributes = <span dangerouslySetInnerHTML={attributesText}></span>;
+      }
+      
+      if (index === elements.length - 1)
+        r.elementRef = <span><small className="text-muted">(Element {elementRef})</small>.</span>;
+      else
+        r.elementRef = <span><small className="text-muted">(Element {elementRef})</small>&#8230;</span>;
+      
+      if (combinator) {
+        var
+          combinatorText
+        ;
+        
+        switch (combinator) {
+          case " ":
+            combinatorText = "a descendant of";
+            break;
+          case ">":
+            combinatorText = "a direct child of";
+            break;
+          case "+":
+            combinatorText = "the sibling next to";
+            break;
+          case "~":
+            combinatorText = "any sibling of";
+            break;
+          default:
+            console.warn("UNKNOWN COMBINATOR", combinator);
+            break;
+        }
+        
+        r.suffix = (
+          <span>which is {combinatorText}</span>
+        );
+      }
+      
+      summary.push(
+        <span key={index}>
+          {r.prefix} {r.type} {r.id} {r.classes} {r.attributes} {r.pseudoClasses} {r.negation} {r.elementRef} {r.suffix}
+        </span>
+      );
+    });
       
     return (
-      <div>Foo</div>
+      <p>
+        {summary}
+      </p>
     )
   }
 });
@@ -368,7 +552,7 @@ var SelectorsIOMain = React.createClass({
     
     return {
       activeIndex: 0,
-      input: '',
+      input: "div#foo[role=main] > *.bar:hover [href^=\"#\"]::before, div#foo[role=main] > *.bar:hover [href^=\"#\"]::after",
       inputCooldownActive: false,
       data: data,
       canDeconstruct: false,
@@ -388,7 +572,8 @@ var SelectorsIOMain = React.createClass({
     }
     else {
       this.setState({
-        selectors: null,
+        inputCooldownActive: true,
+        selectors: null
       });
     }
     
@@ -402,6 +587,7 @@ var SelectorsIOMain = React.createClass({
       self.setState({
         activeIndex: 0,
         data: data,
+        inputCooldownActive: false,
         sequences: data.selectorSequences,
         canDeconstruct: false
       });
@@ -417,8 +603,85 @@ var SelectorsIOMain = React.createClass({
       selectors: this.state.data.selectors
     });
   },
+  
+  deconstruct: function(isValid) {
+    this.setState({
+      canDeconstruct: isValid
+    });
+  },
 
   render: function() {
+    var
+      selectorInput,
+      mediaQueryNotice,
+      selectorSequences,
+      formattedSelectorSequence,
+      deconstructionPane,
+      deconstruction
+    ;
+    
+    if (this.state.data && this.state.input && !this.state.inputCooldownActive) {      
+      if (this.state.data.hasMediaQuery)
+        mediaQueryNotice = (
+          <div className="alert alert-warning">
+            <i className="fa fa-warning"></i> The <code>{this.state.data.hasMediaQuery}</code> &lsquo;at keyword&rsquo; has been ignored ignored. <a className="helper" title="'at keywords' are outside of the scope of selectors.io until a later release">Why?</a>
+          </div>
+        );
+        
+      console.warn(this.state.canDeconstruct, this.state.selectors);
+      if (this.state.canDeconstruct && this.state.selectors)
+        deconstruction = (
+          <article id="deconstruction-summary">
+            <h3>Summary</h3>
+            <SelectorSequenceSummary selectors={this.state.selectors} />
+          </article>
+        );
+      
+      if (this.state.sequences)
+        selectorSequences = (
+          <nav id="sequence-list">
+            <SelectorSequences
+              onSequenceClick={this.handleSequenceClick}
+              sequences={this.state.sequences}
+            />
+            {mediaQueryNotice}
+          </nav>
+        );
+      
+      if (this.state.selectors)
+        formattedSelectorSequence = (
+          <section id="deconstructed-area">
+            <FormattedSelectorSequence
+              selectors={this.state.selectors}
+              onValidInput={this.deconstruct}
+            />
+          </section>
+        );
+        
+      deconstructionPane = (
+        <div className="row">
+          <div className="col-lg-4">
+            {selectorSequences}
+          </div>
+          <div className="col-lg-8">
+            {formattedSelectorSequence}
+            {deconstruction}
+          </div>
+        </div>
+      );
+    }
+    else {
+      deconstructionPane = (
+        <div className="row">
+          <div className="col-lg-12">
+            <div className="alert alert-info">
+              <i className="fa fa-info"></i> Type or paste in any CSS selector into the textarea above.
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
     return (
       <div>
         <div id="selector-input">
@@ -427,24 +690,7 @@ var SelectorsIOMain = React.createClass({
             onUserInput={this.handleUserInput}
           />
         </div>
-        <div className="row">
-          <div className="col-lg-4">
-            <nav id="sequence-list">
-              <SelectorSequences
-                onSequenceClick={this.handleSequenceClick}
-                sequences={this.state.sequences}
-              />
-            </nav>
-          </div>
-          <div className="col-lg-8">
-            <section id="deconstructed-area">
-              <FormattedSelectorSequence
-                selectors={this.state.selectors}
-                onValidInput={this.deconstruct}
-              />
-            </section>
-          </div>
-        </div>
+        {deconstructionPane}
       </div>
     );
   }

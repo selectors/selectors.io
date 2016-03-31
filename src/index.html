@@ -3,6 +3,21 @@
   <head>
     <meta charset="utf-8" />
     <title>Selectors.io</title>
+    
+    <meta property="og:site_name" content="Selectors.io">
+    <meta property="og:title" content="Selectors.io">
+    <meta property="og:type" content="website">
+    <meta property="og:description" content="A nifty website designed to answer the age-old question of 'What does this CSS selector do?'. Paste in your CSS selector and selectors.io will deconstruct it and tell you exactly what it does!">
+    <meta property="og:url" content="https://selectors.io">
+    <meta property="og:image" content="https://selectors.io/assets/icon.png">
+    
+    <meta name="description" content="A nifty website designed to answer the age-old question of 'What does this CSS selector do?'. Paste in your CSS selector and selectors.io will deconstruct it and tell you exactly what it does!">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    
+    <link rel="image_src" href="assets/icon.png">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    
     <script src="https://fb.me/react-0.14.7.js"></script>
     <script src="https://fb.me/react-dom-0.14.7.js"></script>
     <script src="scripts/external/selectors-html.min.js"></script>
@@ -16,10 +31,26 @@
     <link rel="stylesheet" href="css/core.css">
   </head>
   <body>
-    <div class="container-fluid">
+    <header id="logo">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="pull-left">
+              <img src="assets/icon.png" height="64" width="64" />
+            </div>
+            <h1>
+              Selectors.io
+            </h1>
+            <p>
+              Answering the age-old question of &lsquo;What does this CSS selector do?&rsquo;
+            </p>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="container">
       <div class="row">
-        <div class="col-lg-3"></div>
-        <div class="col-lg-9">
+        <div class="col-lg-12">
           <main role="main" id="main-area"></main>
         </div>
       </div>

@@ -1,7 +1,20 @@
 var core = {};
 
 core.SelectorsIO = function(selectorsGroup) {
-  this.selectorSequences = s.getSequences(selectorsGroup);
+  var self = this;
+  this.hasMediaQuery = false;
+  
+  // We want to strip out any media queries and trailing } characters.
+  selectorsGroup = selectorsGroup.replace(new RegExp("^@" + s._ident + "[^{]*", "gm"), function(match) {
+    self.hasMediaQuery = match.match(new RegExp("^@" + s._ident, "g"))[0];
+    return '';
+  }).replace(/\}$/, '');
+  
+  if (this.hasMediaQuery)
+    selectorsGroup = selectorsGroup.replace(/^\s*\{\s*/, '')
+  
+  this.selectorsGroup = s.stripNoise(selectorsGroup);
+  this.selectorSequences = s.getSequences(this.selectorsGroup);
   this.selectors = {
     raw: [],
     elements: {
