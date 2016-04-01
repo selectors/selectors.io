@@ -47,6 +47,10 @@ blockquote {
     color: #795548;
   }
   
+  &.negation {
+    color: #D32F2F;
+  }
+  
   &.combinator {
     color: #1976D2;
     min-width: 16px;
@@ -65,29 +69,70 @@ blockquote {
 }
 
 #logo {
-  background: #fafafa;
   border-bottom: 1px solid #bdbdbd;
   margin-bottom: 10px;
-  padding: 10px 0;
   
-  img {
-    margin-right: 10px;
-    vertical-align: top;
+  a {
+    background: #fafafa;
+    color: inherit;
+    display: block;
+    padding: 10px 0;
+    text-decoration: none;
+    transition: background 0.2s;
+    
+    &:hover,
+    &:focus {
+      background: #eee;
+    }
+  
+    img {
+      margin-right: 10px;
+      vertical-align: top;
+    }
+      
+    h1 {
+      font-family: 'Source Code Pro', monospace;
+      font-size: 32px;
+      line-height: 30px;
+      margin: 0;
+      padding-top: 8px;
+    }
+    
+    p {
+      font-size: 16px;
+      line-height: 18px;
+      margin: 0;
+      padding-bottom: 8px;
+    }
+  }
+}
+
+#splash {
+  #welcome,
+  #start-here {
+    font-size: 17px;
   }
     
-  h1 {
-    font-family: 'Source Code Pro', monospace;
-    font-size: 32px;
-    line-height: 30px;
-    margin: 0;
-    padding-top: 8px;
+  h2 {
+    margin-top: 0;
   }
   
-  p {
-    font-size: 16px;
-    line-height: 18px;
-    margin: 0;
-    padding-bottom: 8px;
+  h4 {
+    margin: 20px 0 0;
+  }
+  
+  p.lead {
+    font-size: 17px;
+  }
+  
+  p.arrows {
+    margin-bottom: 0;
+  }
+  
+  blockquote {
+    a.selector {
+      cursor: pointer;
+    }
   }
 }
 
@@ -147,7 +192,7 @@ blockquote {
       transition: background 0.1s;
       
       &:hover {
-        background: #fafafa;
+        background: #eee;
       }
       
       &::before {
@@ -164,6 +209,7 @@ blockquote {
         
       &.active {
         background: #fafafa;
+        border: 1px solid #bdbdbd;
         color: #000;
         cursor: default;
         padding: 4px 6px;
@@ -212,10 +258,8 @@ blockquote {
         border-right: 1px solid #bdbdbd;
         margin: 5px -1px 5px 0;
         padding: 5px 6px 5px 7px;
-          
+        
         &.active {
-          background: #fafafa;
-          border: 1px solid #bdbdbd;
           border-right: 1px dotted #bdbdbd;
           color: #000;
           cursor: default;

@@ -64,6 +64,14 @@ core.SelectorsIO.prototype.getElementDetails = function(elementArray) {
         type = "invalid";
       }
       
+      try {
+        if (type === "negation")
+          properties = s.getNegationInnerSelectorProperties(selector);
+      }
+      catch (e) {
+        isValid = false;
+      }
+      
       details[index][subIndex] = {
         selector: selector,
         type: type,

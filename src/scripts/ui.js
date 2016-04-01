@@ -145,6 +145,7 @@ var FormattedSelectorValidation = React.createClass({
         currentElement = index + 1,
         types = [],
         ids = [],
+        negation = [],
         invalidHTMLType = null,
         invalidHTMLAttributes = [],
         invalidCSSPseudoClasses = [],
@@ -153,6 +154,8 @@ var FormattedSelectorValidation = React.createClass({
       ;
       
       selectors.forEach(function(selector, subIndex) {   
+        console.info(selector);
+        
         if (selector.isValid === false) {
           if (selector.type === "type")
             invalidHTMLType = selector;
@@ -173,6 +176,8 @@ var FormattedSelectorValidation = React.createClass({
           }
           else if (selector.type === "pseudo-element")
             invalidCSSPseudoElement = selector;
+          else if (selector.type === "negation")
+            negation.push(selector);
         }
              
         if (selector.type === "type" || selector.type === "universal")
@@ -396,13 +401,53 @@ var FormattedSelectorValidation = React.createClass({
         else
           invalid.push(
             <li>
-              Selectors should only ever include <strong>one</strong> ID selector.
+              Selectors should only ever include <strong>one</strong> unique<sup>&#8224;</sup> ID selector.
               <br/>
               <em className="text-info">Element {currentElement}'s selector includes <code className="selector id">{id1}</code>, <code className="selector id">{id2}</code> and {more} other(s).</em>
               <br/>
-              <small className="text-muted">Note that repeating the same ID multiple times <em>is</em> valid.</small>
+              <small className="text-muted"><sup>&#8224;</sup> Note that repeating the same ID multiple times <em>is</em> valid.</small>
             </li>
           );
+      }
+      
+      if (negation.length) {
+        var  
+          n1 = negation[0]
+        ;
+        
+        if (negation.length > 1) {
+          var
+            n1 = negation[1],
+            more = negation.length > 2 ? negation.length - 2 : false
+          ;
+        
+          if (!more)
+            invalid.push(
+              <li>
+                Negation selectors must not contain other negation selectors or pseudo-element selectors.
+                <br/>
+                <em className="text-info">Element {currentElement}'s selector includes both <code className="selector negation">{n1.selector}</code> and <code className="selector negation">{n2.selector}</code>.</em>
+              </li>
+            );
+          
+          else
+            invalid.push(
+              <li>
+                Negation selectors must not contain other negation selectors or pseudo-element selectors.
+                <br/>
+                <em className="text-info">Element {currentElement}'s selector includes <code className="selector negation">{n1.selector}</code> and <code className="selector negation">{n2.selector}</code> and {more} other(s).</em>
+              </li>
+            );
+        }
+        else {
+          invalid.push(
+            <li>
+              Negation selectors must not contain other negation selectors or pseudo-element selectors.
+              <br/>
+              <em className="text-info">Element {currentElement}'s selector includes <code className="selector negation">{n1.selector}</code>.</em>
+            </li>
+          )
+        }
       }
     });
     
@@ -449,7 +494,7 @@ var FormattedSelectorValidation = React.createClass({
     
       return (
         <div className="alert alert-danger">
-          <p><i className="fa fa-warning"></i> This selector sequence is not valid <span className="alert-count">(<strong>{invalid.length} {errorCountText})</strong>):</span></p>
+          <p><i className="fa fa-warning"></i> This selector sequence is not valid <span className="alert-count">(<strong>{invalid.length} {errorCountText}</strong>):</span></p>
           <div className="alert alert-warning">
             <ol className="text-danger">{invalid}</ol>
           </div>
@@ -573,7 +618,7 @@ var FormattedSelectorSequence = React.createClass({
     elements.forEach(function(selectors, index) {
       var first = elements[index][0];
       
-      if (first.type === "combinator" && first.selector === " ")
+      if (first.type === "combinator" && (first.selector === " " || first.selector === ">"))
         margin += marginIncrement;
       
       formatted[index] = (
@@ -600,7 +645,10 @@ var SelectorSequenceSummary = React.createClass({
     var
       elements = elements = selectors.elements.detailed,
       summary = [],
-      nextSuffix = undefined
+      nextSuffix = undefined,
+      elementRelation,
+      parentTextIndex = 0,
+      parentText = ["", "Parent", "Grandparent", "Ancestor"]
     ;
     
     elements.reverse().forEach(function(selectors, index) {
@@ -653,18 +701,24 @@ var SelectorSequenceSummary = React.createClass({
         }
       });
       
-      if (pseudoElement)
+      if (pseudoElement) {
         r.prefix = <span>This applies the <code className="selector pseudo-element">{pseudoElement.selector}</code> pseudo-element to</span>;
-      else if (elements.length - index === elements.length)
-        r.prefix = <span>This selects</span>
+        elementRelation = <span><i className="fa fa-check"></i> Selected</span>;
+      }
+      else if (elements.length - index === elements.length) {
+        r.prefix = <span>This selects</span>;
+        elementRelation = <span><i className="fa fa-check"></i> Selected</span>;
+      }
       
       if (type && type !== "*")
         r.type = <span>any <code className="selector type">&lt;{type}&gt;</code> element</span>;
+      else if (type === "*")
+        r.type = <span>any element (<code className="selector universal">*</code>)</span>
       else
         r.type = <span>any element</span>;
         
       if (id)
-        r.id = <span>whose unique <code>id</code> attribute is exactly <code className="selector id">{id}</code></span>
+        r.id = <span> whose unique <code>id</code> attribute is exactly <code className="selector id">{id}</code></span>
         
       if (classes.length) {
         var classesText = "";
@@ -743,7 +797,9 @@ var SelectorSequenceSummary = React.createClass({
         var pseudoClassText = "";
         
         if (id || classes.length || attributes.length)
-          pseudoClassText += ", and is subject to the";
+          pseudoClassText += ", and";
+          
+        pseudoClassText += " which is subject to the"
           
         pseudoClasses.forEach(function(pseudoClass, index) {
           if (index > 0)
@@ -758,7 +814,28 @@ var SelectorSequenceSummary = React.createClass({
         r.pseudoClasses = <span dangerouslySetInnerHTML={pseudoClassText}></span>;
       }
       
-      r.elementRef = <span><small className="text-muted">(Element {elementRef})</small></span>;
+      if (negation.length) {
+        var negationText = "";
+        
+        if (id || classes.length || attributes.length || pseudoClasses.length)
+          negationText += ", but";
+        else
+          negationText += " which";
+          
+        negationText += " is <strong>not</strong> matched by the ";
+        
+        negation.forEach(function(not, index) {
+          if (index > 0)
+            negationText += (index === negation.length - 1 ? " or the" : ", the");
+            
+          negationText += " " + not.properties.type + " selector <code class='selector " + not.properties.type + "'>" + not.properties.selector + "</code>";
+        });
+          
+        negationText = {__html: negationText};
+        r.negation = <span dangerouslySetInnerHTML={negationText}></span>;
+      }
+      
+      r.elementRef = <span><small className="text-muted">({elementRelation} Element {elementRef})</small></span>;
       
       summary.push(
         <p key={index}>
@@ -773,18 +850,28 @@ var SelectorSequenceSummary = React.createClass({
           combinatorText
         ;
         
+        if ((combinator === " " || combinator === ">") && parentTextIndex !== 3) {
+          parentTextIndex++;
+        }
+        
+        var parent = parentText[parentTextIndex];
+        
         switch (combinator) {
           case " ":
             combinatorText = "a descendant of";
+            elementRelation = parent;
             break;
           case ">":
             combinatorText = "a direct child of";
+            elementRelation = parent;
             break;
           case "+":
             combinatorText = "the sibling next to";
+            elementRelation = (parent ? parent + " " : "") + "Sibling";
             break;
           case "~":
             combinatorText = "any sibling of";
+            elementRelation = (parent ? parent + " " : "") + "Sibling";
             break;
           default:
             console.warn("UNKNOWN COMBINATOR", combinator);
@@ -809,17 +896,18 @@ var SelectorsIOMain = React.createClass({
   updateTimer: null,
   
   getInitialState: function() {
-    var data = new core.SelectorsIO("div#foo[role=main] > *.bar:hover [href^=\"#\"]::before, div#foo[role=main] > *.bar:hover [href^=\"#\"]::after");
-    data.changeActiveSelectorSequence(0);
-    
+    return this.setInitialState();
+  },
+  
+  setInitialState: function() {
     return {
       activeIndex: 0,
-      input: "div#foo[role=main] > *.bar:hover [href^=\"#\"]::before, div#foo[role=main] > *.bar:hover [href^=\"#\"]::after",
+      input: "",
       inputCooldownActive: false,
-      data: data,
+      data: null,
       canDeconstruct: false,
-      sequences: data.selectorSequences,
-      selectors: data.selectors
+      sequences: null,
+      selectors: null
     }
   },
   
@@ -841,9 +929,9 @@ var SelectorsIOMain = React.createClass({
     
     var self = this;
     
-    this.updateTimer = setTimeout(function() {
+    this.updateTimer = setTimeout(function() {     
       var data = new core.SelectorsIO(input);
-      
+       
       self.updateTimer = null;
       
       self.setState({
@@ -870,6 +958,26 @@ var SelectorsIOMain = React.createClass({
     this.setState({
       canDeconstruct: isValid
     });
+  },
+  
+  setSelectorInput: function(value) {    
+    var
+      data = new core.SelectorsIO(value),
+      self = this
+    ;
+    
+    this.setState({
+      input: value,
+      activeIndex: 0,
+      data: data,
+      inputCooldownActive: false,
+      sequences: data.selectorSequences,
+      canDeconstruct: false
+    });
+    
+    setTimeout(function() {
+      self.handleSequenceClick(0);
+    }, 100);
   },
 
   render: function() {
@@ -932,12 +1040,70 @@ var SelectorsIOMain = React.createClass({
       );
     }
     else {
+      var 
+        self = this,
+        popularExamples = [],
+        popularSelectors = [
+          {
+            description: "Normalize.css",
+            selectorSequence: "audio:not([controls])"
+          },
+          {
+            description: "Bootstrap",
+            selectorSequence: ".list-group-item > .badge + .badge"
+          },
+          {
+            description: "<a href='http://stackoverflow.com/q/3859101/1317805'>This</a> Stack Overflow question",
+            selectorSequence: "a[href^=\"http:\"]"
+          },
+          {
+            description: "The Selectors Level 3 W3C Recommendation",
+            selectorSequence: "ns|*"
+          }
+        ]
+      ;
+      
+      popularSelectors.forEach(function(popular, index) {
+        popularExamples.push(
+          <p key={index}>
+            <strong>
+              <a className="selector" onClick={function() { self.setSelectorInput(popular.selectorSequence) }}>
+                {popular.selectorSequence}
+              </a>
+            </strong>
+            <small dangerouslySetInnerHTML={ { __html: popular.description }}></small>
+          </p>
+        );
+      });
+      
       deconstructionPane = (
-        <div className="row">
+        <div className="row" id="splash">
           <div className="col-md-12">
-            <div className="alert alert-info">
-              <i className="fa fa-info"></i> Type or paste in any CSS selector into the textarea above.
-            </div>
+            <article id="start-here">
+              <span className="text-success">
+                <p className="arrows lead text-center"><i className="fa fa-arrow-up"></i><i className="fa fa-arrow-up"></i><i className="fa fa-arrow-up"></i></p>
+                <p className="lead text-center">Start by typing or pasting in any CSS selector you like into the above text input field</p>
+              </span>
+            </article>
+            <hr/>
+            <article id="welcome">
+              <h2>Welcome</h2>
+              <p><strong>Selectors.io</strong> has only recently been launched and is still in a very beta-esque state.</p>
+              <p>
+                It's open-sourced on <i className="fa fa-github"></i> GitHub at <a href="https://github.com/selectors/io">github.com/selectors/io</a>.
+                <br/>
+                If you find any bugs, feel free to report them at <i className="fa fa-bug"></i> <a href="https://github.com/selectors/io/issues">github.com/selectors/io/issues</a>.
+              </p>
+            </article>
+            <h4>Examples</h4>
+            <p>
+              If you're lost for inspiration, you can click on any of the below examples to give Selectors.io a try!
+              <br/>
+              <span className="text-muted">Note that you can get back to this list at any point by clicking anywhere on the header.</span>
+            </p>
+            <blockquote>
+              {popularExamples}
+            </blockquote>
           </div>
         </div>
       )

@@ -37,6 +37,9 @@ blockquote small {
 .selector.pseudo-element {
   color: #795548;
 }
+.selector.negation {
+  color: #D32F2F;
+}
 .selector.combinator {
   color: #1976D2;
   min-width: 16px;
@@ -51,27 +54,56 @@ blockquote small {
   font-size: 16px;
 }
 #logo {
-  background: #fafafa;
   border-bottom: 1px solid #bdbdbd;
   margin-bottom: 10px;
-  padding: 10px 0;
 }
-#logo img {
+#logo a {
+  background: #fafafa;
+  color: inherit;
+  display: block;
+  padding: 10px 0;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+#logo a:hover,
+#logo a:focus {
+  background: #eee;
+}
+#logo a img {
   margin-right: 10px;
   vertical-align: top;
 }
-#logo h1 {
+#logo a h1 {
   font-family: 'Source Code Pro', monospace;
   font-size: 32px;
   line-height: 30px;
   margin: 0;
   padding-top: 8px;
 }
-#logo p {
+#logo a p {
   font-size: 16px;
   line-height: 18px;
   margin: 0;
   padding-bottom: 8px;
+}
+#splash #welcome,
+#splash #start-here {
+  font-size: 17px;
+}
+#splash h2 {
+  margin-top: 0;
+}
+#splash h4 {
+  margin: 20px 0 0;
+}
+#splash p.lead {
+  font-size: 17px;
+}
+#splash p.arrows {
+  margin-bottom: 0;
+}
+#splash blockquote a.selector {
+  cursor: pointer;
 }
 #selector-input {
   margin-bottom: 20px;
@@ -123,7 +155,7 @@ blockquote small {
   transition: background 0.1s;
 }
 #sequence-list ul li:hover {
-  background: #fafafa;
+  background: #eee;
 }
 #sequence-list ul li::before {
   counter-increment: sequence;
@@ -138,6 +170,7 @@ blockquote small {
 }
 #sequence-list ul li.active {
   background: #fafafa;
+  border: 1px solid #bdbdbd;
   color: #000;
   cursor: default;
   padding: 4px 6px;
@@ -173,8 +206,6 @@ blockquote small {
     padding: 5px 6px 5px 7px;
   }
   #sequence-list ul li.active {
-    background: #fafafa;
-    border: 1px solid #bdbdbd;
     border-right: 1px dotted #bdbdbd;
     color: #000;
     cursor: default;
