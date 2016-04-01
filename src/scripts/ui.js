@@ -124,17 +124,19 @@ var FormattedSelectorValidation = React.createClass({
     if (!domNode)
       return;
       
-    this.props.onValidInput(domNode.className === "alert alert-success" || domNode.className === "has-warning");
+    this.props.onValidInput(domNode.className === "is-valid");
   },
   
   render: function() {    
     var 
       invalid = [],
       invalidHTML = [],
+      invalidCSSPseudo = [],
       elements = this.props.elements,
       elementCount = elements.length,
       pseudoElements = [],
       pseudoNotAtEnd = [],
+      hasDeprecatedSingleColonPseudoElement,
       self = this
     ;
     
@@ -144,7 +146,10 @@ var FormattedSelectorValidation = React.createClass({
         types = [],
         ids = [],
         invalidHTMLType = null,
-        invalidHTMLAttributes = []
+        invalidHTMLAttributes = [],
+        invalidCSSPseudoClasses = [],
+        invalidCSSPseudoValues = [],
+        invalidCSSPseudoElement = null
       ;
       
       selectors.forEach(function(selector, subIndex) {   
@@ -153,6 +158,21 @@ var FormattedSelectorValidation = React.createClass({
             invalidHTMLType = selector;
           else if (selector.type === "attribute")
             invalidHTMLAttributes.push(selector);
+          else if (selector.type === "pseudo-class") {
+            switch (selector.properties.name) {
+              case "nth-child":
+              case "nth-last-child":
+              case "nth-of-type":
+              case "nth-last-of-type":
+              case "lang":
+                invalidCSSPseudoValues.push(selector);
+                break;
+              default:
+                invalidCSSPseudoClasses.push(selector);
+            }
+          }
+          else if (selector.type === "pseudo-element")
+            invalidCSSPseudoElement = selector;
         }
              
         if (selector.type === "type" || selector.type === "universal")
@@ -164,8 +184,112 @@ var FormattedSelectorValidation = React.createClass({
           
           if (subIndex !== selectors.length - 1 || index != elementCount - 1)
             pseudoNotAtEnd.push(selector.selector);
+          
+          if (selector.properties.colons === 1 && !hasDeprecatedSingleColonPseudoElement)
+            hasDeprecatedSingleColonPseudoElement = selector.properties.name;
         }
       });
+      
+      if (invalidCSSPseudoClasses.length) {
+        var  
+          pc1 = invalidCSSPseudoClasses[0],
+          footnote = (
+            <small className="text-muted"><sup>&#8224;</sup> Custom pseudo-classes must be prefixed with either <code>&ldquo;-name-&rdquo;</code> or <code>&ldquo;_name-&rdquo;</code> (like <code className="selector pseudo-class">:-custom-{pc1.properties.name}</code>).</small>
+          )
+        ;
+        
+        if (invalidCSSPseudoClasses.length > 1) {
+          var
+            pc2 = invalidCSSPseudoClasses[1],
+            more = invalidCSSPseudoClasses.length > 2 ? invalidCSSPseudoClasses.length - 2 : false
+          ;
+        
+          if (!more)
+            invalidCSSPseudo.push(
+              <li>
+                Multiple unknown pseudo-classes detected.<sup>&#8224;</sup>
+                <br/>
+                <em className="text-info">Element {currentElement}'s selector includes unknown <code className="selector pseudo-class">:{pc1.properties.name}</code> and <code className="selector pseudo-class">{pc2.properties.name}</code> pseudo-classes.</em>
+                <br/>
+                {footnote}
+              </li>
+            );
+          
+          else
+            invalidCSSPseudo.push(
+              <li>
+                Multiple unknown pseudo-classes detected.<sup>&#8224;</sup>
+                <br/>
+                <em className="text-info">Element {currentElement}'s selector includes unknown <code className="selector pseudo-class">:{pc1.properties.name}</code>, <code className="selector pseudo-class">{pc2.properties.name}</code> and {more} other pseudo-classes.</em>
+                <br/>
+                {footnote}
+              </li>
+            );
+        }
+        else {
+          invalidCSSPseudo.push(
+            <li>
+              Unknown pseudo-class detected.<sup>&#8224;</sup>
+              <br/>
+              <em className="text-info">Element {currentElement}'s selector includes unknown <code className="selector pseudo-class">:{pc1.properties.name}</code> pseudo-class.</em>
+              <br/>
+              {footnote}
+            </li>
+          )
+        }
+      }
+      
+      if (invalidCSSPseudoValues.length) {
+        var  
+          pv1 = invalidCSSPseudoValues[0]
+        ;
+        
+        if (invalidCSSPseudoValues.length > 1) {
+          var
+            pv2 = invalidCSSPseudoValues[1],
+            more = invalidCSSPseudoValues.length > 2 ? invalidCSSPseudoValues.length - 2 : false
+          ;
+        
+          if (!more)
+            invalidCSSPseudo.push(
+              <li>
+                Multiple invalid pseudo-class values detected.
+                <br/>
+                <em className="text-info">Element {currentElement}'s selector includes <code className="selector pseudo-class">:{pv1.properties.name}</code> and <code className="selector pseudo-class">:{pv2.properties.name}</code> whose values (<code>&ldquo;{pv1.properties.args}&rdquo;</code> and <code>&ldquo;{pv2.properties.args}&rdquo;</code>) aren't valid.</em>
+              </li>
+            );
+          
+          else
+            invalidCSSPseudo.push(
+              <li>
+                Multiple invalid pseudo-class values detected.
+                <br/>
+                <em className="text-info">Element {currentElement}'s selector includes <code className="selector pseudo-class">:{pv1.properties.name}</code>, <code className="selector pseudo-class">:{pv2.properties.name}</code> and {more} other(s) (like <code>&ldquo;{pv1.properties.args}&rdquo;</code> and <code>&ldquo;{pv2.properties.args}&rdquo;</code>) aren't valid.</em>
+              </li>
+            );
+        }
+        else {
+          invalidCSSPseudo.push(
+            <li>
+              Unknown pseudo-class value detected.
+              <br/>
+              <em className="text-info">Element {currentElement}'s selector includes <code className="selector pseudo-class">:{pv1.properties.name}</code> whose value (<code>&ldquo;{pv1.properties.args}&rdquo;</code>) isn't valid.</em>
+            </li>
+          )
+        }
+      }
+      
+      if (invalidCSSPseudoElement) {
+        invalidCSSPseudo.push(
+          <li>
+             Unknown pseudo-element detected.<sup>&#8224;</sup>
+            <br/>
+            <em className="text-info">Element {currentElement}'s selector includes unknown pseudo-element <code className="selector pseudo-element">::{invalidCSSPseudoElement.properties.name}</code>.</em>
+            <br/>
+            <small className="text-muted"><sup>&#8224;</sup> Custom pseudo-elements must be prefixed with either <code>&ldquo;-name-&rdquo;</code> or <code>&ldquo;_name-&rdquo;</code> (like <code className="selector pseudo-element">::-custom-{invalidCSSPseudoElement.properties.name}</code>).</small>
+          </li>
+        )
+      }
       
       if (invalidHTMLType) {
         invalidHTML.push(
@@ -189,7 +313,7 @@ var FormattedSelectorValidation = React.createClass({
           ;
         
           if (!more)
-            invalid.push(
+            invalidHTML.push(
               <li>
                 Multiple unknown attributes detected.<sup>&#8224;</sup>
                 <br/>
@@ -200,7 +324,7 @@ var FormattedSelectorValidation = React.createClass({
             );
           
           else
-            invalid.push(
+            invalidHTML.push(
               <li>
                 Multiple unknown attributes detected.<sup>&#8224;</sup>
                 <br/>
@@ -319,44 +443,80 @@ var FormattedSelectorValidation = React.createClass({
         </li>
       )
     }
-    
-    if (!invalid.length && !invalidHTML.length) {          
-      return (
-        <div className="alert alert-success">
-          <p><i className="fa fa-check"></i> This selector sequence is valid and will select <strong>Element {elementCount}</strong>.</p>
-        </div>
-      )
-    }
-    
-    else if (invalid.length) {
+      
+    if (invalid.length) {
       var errorCountText = "error" + (invalid.length > 1 ? "s" : "");
     
       return (
         <div className="alert alert-danger">
-          <p><i className="fa fa-warning"></i> This selector sequence is not valid (<strong>{invalid.length} {errorCountText})</strong>):</p>
+          <p><i className="fa fa-warning"></i> This selector sequence is not valid <span className="alert-count">(<strong>{invalid.length} {errorCountText})</strong>):</span></p>
           <div className="alert alert-warning">
             <ol className="text-danger">{invalid}</ol>
           </div>
         </div>
-      )
+      );
     }
     
-    var warningCountText = "warning" + (invalidHTML.length > 1 ? "s" : "");
+    var
+      successAlert,
+      deprecatedPseudoElementAlert,
+      invalidCSSPseudoAlert,
+      invalidHTMLAlert,
+      warningCountText
+    ;
     
-    return (
-      <div className="has-warning">
+    if (!invalidCSSPseudo.length)
+      successAlert = (
         <div className="alert alert-success">
           <p><i className="fa fa-check"></i> This selector sequence is valid and will select <strong>Element {elementCount}</strong>.</p>
         </div>
+      );
+    
+    if (invalidCSSPseudo.length) {
+      warningCountText = "warning" + (invalidCSSPseudo.length > 1 ? "s" : "");
+      
+      invalidCSSPseudoAlert = (
         <div className="alert alert-warning">
-          <p><i className="fa fa-warning"></i> This doesn't conform to <a href="https://www.w3.org/TR/html5/">HTML5</a>, <a href="https://www.w3.org/TR/SVG11/">SVG1.1</a> or <a href="https://www.w3.org/TR/MathML3/">MathML3</a><sup>&#8224;</sup>. (<strong>{invalidHTML.length} {warningCountText}</strong>):</p>
+          <p><i className="fa fa-warning"></i> This doesn't conform to the <a href="https://www.w3.org/TR/selectors/">Selectors Level 3</a> recommendation.<sup>&#8224;</sup>. <span className="alert-count">(<strong>{invalidCSSPseudo.length} {warningCountText}</strong>):</span></p>
+          <div className="alert">
+            <ol className="text-warning">{invalidCSSPseudo}</ol>
+          </div>
+          <p className="text-muted"><sup>&#8224;</sup> <span className="text-danger">Not all CSS implementations adhere to this, which is why this is only a warning and not an error. If you're creating a native website which doesn't implement any fancy, non-conforming pseudo-classes and pseudo-elements then this should be treated as an error.</span></p>
+          <hr/>
+          <p>This selector sequence will select <strong>Element {elementCount}</strong>.</p>
+        </div>
+      );
+    }
+    
+    if (invalidHTML.length) {
+      warningCountText = "warning" + (invalidHTML.length > 1 ? "s" : "");
+      
+      invalidHTMLAlert = (
+        <div className="alert alert-warning">
+          <p><i className="fa fa-warning"></i> This doesn't conform to the <a href="https://www.w3.org/TR/html5/">HTML5</a>, <a href="https://www.w3.org/TR/SVG11/">SVG1.1</a> or <a href="https://www.w3.org/TR/MathML3/">MathML3</a> recommendations.<sup>&#8224;</sup> <span className="alert-count">(<strong>{invalidHTML.length} {warningCountText}</strong>):</span></p>
           <div className="alert">
             <ol className="text-warning">{invalidHTML}</ol>
           </div>
           <p className="text-muted"><sup>&#8224;</sup> If you're not using this with HTML, SVG or MathML, you can ignore this warning box.</p>
         </div>
+      );
+    }
+      
+    if (hasDeprecatedSingleColonPseudoElement)
+      deprecatedPseudoElementAlert = (
+        <div className="alert alert-info">
+          <p><i className="fa fa-info-circle"></i> This selector sequence contains the deprecated single-colon pseudo-element syntax. The CSS Selectors Level 3 specification mandates that pseudo-elements are prefixed with two colon characters (<code className="selector pseudo-element">::{hasDeprecatedSingleColonPseudoElement}</code> instead of <code className="selector pseudo-element">:{hasDeprecatedSingleColonPseudoElement}</code>).</p>
+        </div>
+      );
+           
+    return (
+      <div className="is-valid">
+        {successAlert}
+        {invalidCSSPseudoAlert}
+        {invalidHTMLAlert}
+        {deprecatedPseudoElementAlert}
       </div>
-    )
+    );
   }
 });
 
@@ -439,7 +599,8 @@ var SelectorSequenceSummary = React.createClass({
     
     var
       elements = elements = selectors.elements.detailed,
-      summary = []
+      summary = [],
+      nextSuffix = undefined
     ;
     
     elements.reverse().forEach(function(selectors, index) {
@@ -509,9 +670,9 @@ var SelectorSequenceSummary = React.createClass({
         var classesText = "";
         
         if (id)
-          classesText += ", and ";
+          classesText += ", and";
           
-        classesText += "whose <code>class</code> attribute contains "
+        classesText += " whose <code>class</code> attribute contains "
         
         classes.forEach(function(className, index) {
           if (index > 0)
@@ -528,7 +689,7 @@ var SelectorSequenceSummary = React.createClass({
         var attributesText = "";
         
         if (id || classes.length)
-          attributesText += ", and ";
+          attributesText += ", and";
         
         attributes.forEach(function(attribute, index) {
           if (index > 0)
@@ -537,10 +698,10 @@ var SelectorSequenceSummary = React.createClass({
           var properties = attribute.properties;
           
           if (properties.symbol && properties.value) {
-            attributesText += "whose ";
+            attributesText += " whose ";
           }
           else {
-            attributesText += "which has a "
+            attributesText += " which has a "
           }
             
           if (properties.namespace)
@@ -562,10 +723,10 @@ var SelectorSequenceSummary = React.createClass({
                 attributesText += "is exactly <code>&ldquo;" + properties.value + "&rdquo;</code> or is that followed by a hyphen character (<code>&ldquo;" + properties.value + "-&rdquo;</code>)";
                 break;
               case "^=":
-                attributesText += "is prefixed (begins) with <code>&ldquo;" + properties.value + "&#8230;&rdquo;</code>";
+                attributesText += "begins with <code>&ldquo;" + properties.value + "&#8230;&rdquo;</code>";
                 break;
               case "$=":
-                attributesText += "is suffixed (ends) with <code>&ldquo;" + properties.value + "&#8230;&rdquo;</code>";
+                attributesText += "ends with <code>&ldquo;" + properties.value + "&#8230;&rdquo;</code>";
                 break;
               case "*=":
                 attributesText += "contains <code>&ldquo;" + properties.value + "&rdquo;</code>";
@@ -578,10 +739,34 @@ var SelectorSequenceSummary = React.createClass({
         r.attributes = <span dangerouslySetInnerHTML={attributesText}></span>;
       }
       
-      if (index === elements.length - 1)
-        r.elementRef = <span><small className="text-muted">(Element {elementRef})</small>.</span>;
-      else
-        r.elementRef = <span><small className="text-muted">(Element {elementRef})</small>&#8230;</span>;
+      if (pseudoClasses.length) {
+        var pseudoClassText = "";
+        
+        if (id || classes.length || attributes.length)
+          pseudoClassText += ", and is subject to the";
+          
+        pseudoClasses.forEach(function(pseudoClass, index) {
+          if (index > 0)
+            pseudoClassText += (index === pseudoClasses.length - 1 ? " and" : ",")
+            
+          pseudoClassText += " <code class='selector pseudo-class'>" + pseudoClass.selector + "</code>";
+        });
+          
+        pseudoClassText += " pseudo-class" + (pseudoClasses.length > 1 ? "es" : "");
+          
+        pseudoClassText = {__html: pseudoClassText};
+        r.pseudoClasses = <span dangerouslySetInnerHTML={pseudoClassText}></span>;
+      }
+      
+      r.elementRef = <span><small className="text-muted">(Element {elementRef})</small></span>;
+      
+      summary.push(
+        <p key={index}>
+          {nextSuffix} {r.prefix} {r.type}{r.id}{r.classes}{r.attributes}{r.pseudoClasses}{r.negation} {r.elementRef}
+        </p>
+      );
+      
+      nextSuffix = undefined;
       
       if (combinator) {
         var
@@ -606,22 +791,16 @@ var SelectorSequenceSummary = React.createClass({
             break;
         }
         
-        r.suffix = (
-          <span>which is {combinatorText}</span>
+        nextSuffix = (
+          <span>&#8230;which is {combinatorText}</span>
         );
       }
-      
-      summary.push(
-        <span key={index}>
-          {r.prefix} {r.type} {r.id} {r.classes} {r.attributes} {r.pseudoClasses} {r.negation} {r.elementRef} {r.suffix}
-        </span>
-      );
     });
       
     return (
-      <p>
+      <blockquote>
         {summary}
-      </p>
+      </blockquote>
     )
   }
 });
@@ -707,7 +886,7 @@ var SelectorsIOMain = React.createClass({
       if (this.state.data.hasMediaQuery)
         mediaQueryNotice = (
           <div className="alert alert-warning">
-            <i className="fa fa-warning"></i> The <code>{this.state.data.hasMediaQuery}</code> &lsquo;at keyword&rsquo; has been ignored ignored. <a className="helper" title="'at keywords' are outside of the scope of selectors.io until a later release">Why?</a>
+            <i className="fa fa-warning"></i> The <code>{this.state.data.hasMediaQuery}</code> &lsquo;at keyword&rsquo; has been ignored ignored. <abbr title="'at keywords' are outside of the scope of selectors.io until a later release">Why?</abbr>
           </div>
         );
         
