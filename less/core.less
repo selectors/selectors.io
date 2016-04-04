@@ -143,19 +143,35 @@ blockquote {
   textarea {
     font-family: 'Source Code Pro', monospace;
     font-size: 16px;
-    min-height: 64px;
+    min-height: 72px;
     resize: vertical;
   }
   
+  .btn[disabled] {
+    opacity: 0.4;
+  }
+  
+  .btn-warning[disabled] {
+    background: #f0ad4e;
+  }
+  
+  .btn-primary {
+    margin-top: 4px;
+    
+    &[disabled] {
+      background: #337ab7;
+    }
+  }
+    
   span.cooldown {
     bottom: -20px;
     color: #90A4AE;
     font-size: 14px;
-    position: absolute;
-    right: 0;
-    opacity: 0;
     line-height: 20px;
+    opacity: 0;
     overflow: hidden;
+    position: absolute;
+    right: 15px;
     text-align: right;
     transition: opacity 0.1s;
     
@@ -272,6 +288,12 @@ blockquote {
 
 #deconstructed-area {
   #formatted-selector-area {
+    .invalid-selector-part {
+      color: #F44336;
+      position: relative;
+      text-decoration: underline;
+    }
+    
     pre {
       counter-reset: formatted;
       font-size: 16px;

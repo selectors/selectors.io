@@ -30,12 +30,81 @@ core.SelectorsIO.prototype.changeActiveSelectorSequence = function(index) {
     
   var
     sequence = this.selectorSequences[index],
-    elementArray = s.getElements(sequence)
+    joinedSelectors,
+    offset = 0,
+    errorPos = 0,
+    processingString = "",
+    processingValid = true,
+    processedArray = [],
+    sequenceIsValid = true,
+    elementArray
   ;  
   
   this.selectors.raw = s.getSelectors(sequence);
-  this.selectors.elements.raw = elementArray;
-  this.selectors.elements.detailed = this.getElementDetails(elementArray)
+  
+  joinedSelectors = this.selectors.raw.join('');
+  
+  for (var i = 0; i < (joinedSelectors.length > sequence.length ? joinedSelectors.length : sequence.length); i++) {
+    var
+      joined = joinedSelectors[i],
+      original = sequence[i + offset]
+    ;
+    
+    if (joined === original) {
+      if (!processingValid) {
+        processedArray.push({
+          text: processingString,
+          valid: processingValid
+        });
+        
+        processingString = "";
+        processingValid = true;
+      }
+      
+      if (original)
+        processingString += original;
+      continue;
+    }
+      
+    if (original === " " && joined !== " ") {
+      offset++;
+      i--;
+      continue;
+    }
+    
+    if (processingValid) {
+      processedArray.push({
+        text: processingString,
+        valid: processingValid
+      });
+      
+      processingString = "";
+      processingValid = false;
+    }
+    
+    if (original)
+      processingString += original;
+      
+    offset++;
+    i--;
+    
+    sequenceIsValid = false;
+  }
+  
+  
+  if (processingString)
+    processedArray.push({
+        text: processingString,
+        valid: processingValid
+    });
+  
+  this.selectors.invalidSequenceArray = sequenceIsValid ? null : processedArray;
+  
+  if (sequenceIsValid)
+    elementArray = s.getElements(sequence)
+  
+  this.selectors.elements.raw = elementArray || null;
+  this.selectors.elements.detailed = elementArray ? this.getElementDetails(elementArray) : null;
 }
 
 core.SelectorsIO.prototype.getElementDetails = function(elementArray) {
@@ -47,15 +116,27 @@ core.SelectorsIO.prototype.getElementDetails = function(elementArray) {
     selectors.forEach(function(selector, subIndex) {
       var 
         type,
+        namespace,
         isValid = false,
         properties = null
       ;
       
       try {
-        type = s.getType(selector);
-        isValid = type === "combinator" || s.isValidSelector(selector, true);
+        var
+          typeObj = s.getType(selector),
+          selectorToValidate = selector
+        ;
         
-        if (type === "attribute")
+        type = typeObj.type;
+        
+        if (type === "type" || type === "universal")
+          selectorToValidate = selector.replace(typeObj.namespace + "|", "");
+        
+        isValid = type === "combinator" || s.isValidSelector(selectorToValidate, true);
+        
+        if (type === "type" || type === "universal")
+          namespace = typeObj.namespace;
+        else if (type === "attribute")
           properties = s.getAttributeProperties(selector);
         else if (type === "pseudo-class" || type === "pseudo-element")
           properties = s.getPseudoProperties(selector);
@@ -75,6 +156,7 @@ core.SelectorsIO.prototype.getElementDetails = function(elementArray) {
       details[index][subIndex] = {
         selector: selector,
         type: type,
+        namespace: namespace,
         isValid: isValid,
         properties: properties
       }

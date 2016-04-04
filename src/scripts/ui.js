@@ -1,7 +1,8 @@
 var SelectorInput = React.createClass({
   getInitialState: function() {
     return {
-      msRemaining: 0
+      msRemaining: 0,
+      lastValue: ""
     }
   },
   
@@ -20,17 +21,32 @@ var SelectorInput = React.createClass({
   },
   
   handleChange: function() {
+    this.update(this.refs.input.value);
+  },
+  
+  clear: function() {
+    this.setState({
+      lastValue: this.refs.input.value
+    });
+    
+    this.props.onUserInput("");
+  },
+  
+  redo: function() {
+    this.update(this.state.lastValue);
+  },
+  
+  update: function(value) {
     clearInterval(this.interval);
       
     this.setState({
-      msRemaining: 1.0
+      msRemaining: 1.0,
+      lastValue: this.refs.input.value
     });
     
     this.interval = setInterval(this.tick, 100);
     
-    this.props.onUserInput(
-      this.refs.input.value
-    );
+    this.props.onUserInput(value);
   },
   
   componentWillUnmount: function() {
@@ -44,17 +60,29 @@ var SelectorInput = React.createClass({
     ;
     
     return (
-      <form>
-        <textarea
-          autoFocus
-          className="form-control"
-          placeholder="Enter your CSS selector here..."
-          value={this.props.input}
-          ref="input"
-          onChange={this.handleChange}
-        />
-        <span className={cooldownClass}>{cooldownText}s until content updates</span>
-      </form>
+      <div className="row">
+        <div className="col-lg-11 col-sm-10 col-xs-9">
+          <form>
+            <textarea
+              autoFocus
+              className="form-control"
+              placeholder="Enter your CSS selector here..."
+              value={this.props.input}
+              ref="input"
+              onChange={this.handleChange}
+            />
+            <span className={cooldownClass}>{cooldownText}s until content updates</span>
+          </form>
+        </div>
+        <div className="col-lg-1 col-sm-2 col-xs-3">
+          <button className="btn btn-warning form-control" title="Undo Input" disabled={!this.props.input || this.state.msRemaining > 0} onClick={this.clear}>
+            <i className="fa fa-undo"></i>
+          </button>
+          <button className="btn btn-primary form-control" title="Redo Removed Input" disabled={!!this.props.input || !this.state.lastValue || this.state.msRemaining > 0} onClick={this.redo}>
+            <i className="fa fa-repeat"></i>
+          </button>
+        </div>
+      </div>
     );
   }
 });
@@ -66,7 +94,7 @@ var SelectorSequences = React.createClass({
     }
   },
   
-  handleClick: function(clickedIndex) {    
+  handleClick: function(e, clickedIndex) {    
     this.setState({
       activeIndex: clickedIndex
     });
@@ -96,7 +124,7 @@ var SelectorSequences = React.createClass({
         <li
           className={className}
           key={index}
-          onClick={self.handleClick.bind(this, index)}
+          onClick={self.handleClick.bind(null, this, index)}
         >
           {sequence}
         </li>
@@ -153,9 +181,7 @@ var FormattedSelectorValidation = React.createClass({
         invalidCSSPseudoElement = null
       ;
       
-      selectors.forEach(function(selector, subIndex) {   
-        console.info(selector);
-        
+      selectors.forEach(function(selector, subIndex) {
         if (selector.isValid === false) {
           if (selector.type === "type")
             invalidHTMLType = selector;
@@ -199,7 +225,7 @@ var FormattedSelectorValidation = React.createClass({
         var  
           pc1 = invalidCSSPseudoClasses[0],
           footnote = (
-            <small className="text-muted"><sup>&#8224;</sup> Custom pseudo-classes must be prefixed with either <code>&ldquo;-name-&rdquo;</code> or <code>&ldquo;_name-&rdquo;</code> (like <code className="selector pseudo-class">:-custom-{pc1.properties.name}</code>).</small>
+            <small key={index} className="text-muted"><sup>&#8224;</sup> Custom pseudo-classes must be prefixed with either <code>&ldquo;-name-&rdquo;</code> or <code>&ldquo;_name-&rdquo;</code> (like <code className="selector pseudo-class">:-custom-{pc1.properties.name}</code>).</small>
           )
         ;
         
@@ -211,7 +237,7 @@ var FormattedSelectorValidation = React.createClass({
         
           if (!more)
             invalidCSSPseudo.push(
-              <li>
+              <li key={index}>
                 Multiple unknown pseudo-classes detected.<sup>&#8224;</sup>
                 <br/>
                 <em className="text-info">Element {currentElement}'s selector includes unknown <code className="selector pseudo-class">:{pc1.properties.name}</code> and <code className="selector pseudo-class">{pc2.properties.name}</code> pseudo-classes.</em>
@@ -222,7 +248,7 @@ var FormattedSelectorValidation = React.createClass({
           
           else
             invalidCSSPseudo.push(
-              <li>
+              <li key={index}>
                 Multiple unknown pseudo-classes detected.<sup>&#8224;</sup>
                 <br/>
                 <em className="text-info">Element {currentElement}'s selector includes unknown <code className="selector pseudo-class">:{pc1.properties.name}</code>, <code className="selector pseudo-class">{pc2.properties.name}</code> and {more} other pseudo-classes.</em>
@@ -233,7 +259,7 @@ var FormattedSelectorValidation = React.createClass({
         }
         else {
           invalidCSSPseudo.push(
-            <li>
+            <li key={index}>
               Unknown pseudo-class detected.<sup>&#8224;</sup>
               <br/>
               <em className="text-info">Element {currentElement}'s selector includes unknown <code className="selector pseudo-class">:{pc1.properties.name}</code> pseudo-class.</em>
@@ -257,7 +283,7 @@ var FormattedSelectorValidation = React.createClass({
         
           if (!more)
             invalidCSSPseudo.push(
-              <li>
+              <li key={index}>
                 Multiple invalid pseudo-class values detected.
                 <br/>
                 <em className="text-info">Element {currentElement}'s selector includes <code className="selector pseudo-class">:{pv1.properties.name}</code> and <code className="selector pseudo-class">:{pv2.properties.name}</code> whose values (<code>&ldquo;{pv1.properties.args}&rdquo;</code> and <code>&ldquo;{pv2.properties.args}&rdquo;</code>) aren't valid.</em>
@@ -266,7 +292,7 @@ var FormattedSelectorValidation = React.createClass({
           
           else
             invalidCSSPseudo.push(
-              <li>
+              <li key={index}>
                 Multiple invalid pseudo-class values detected.
                 <br/>
                 <em className="text-info">Element {currentElement}'s selector includes <code className="selector pseudo-class">:{pv1.properties.name}</code>, <code className="selector pseudo-class">:{pv2.properties.name}</code> and {more} other(s) (like <code>&ldquo;{pv1.properties.args}&rdquo;</code> and <code>&ldquo;{pv2.properties.args}&rdquo;</code>) aren't valid.</em>
@@ -275,7 +301,7 @@ var FormattedSelectorValidation = React.createClass({
         }
         else {
           invalidCSSPseudo.push(
-            <li>
+            <li key={index}>
               Unknown pseudo-class value detected.
               <br/>
               <em className="text-info">Element {currentElement}'s selector includes <code className="selector pseudo-class">:{pv1.properties.name}</code> whose value (<code>&ldquo;{pv1.properties.args}&rdquo;</code>) isn't valid.</em>
@@ -286,7 +312,7 @@ var FormattedSelectorValidation = React.createClass({
       
       if (invalidCSSPseudoElement) {
         invalidCSSPseudo.push(
-          <li>
+          <li key={index}>
              Unknown pseudo-element detected.<sup>&#8224;</sup>
             <br/>
             <em className="text-info">Element {currentElement}'s selector includes unknown pseudo-element <code className="selector pseudo-element">::{invalidCSSPseudoElement.properties.name}</code>.</em>
@@ -298,7 +324,7 @@ var FormattedSelectorValidation = React.createClass({
       
       if (invalidHTMLType) {
         invalidHTML.push(
-          <li>
+          <li key={index}>
              Unknown type detected.
             <br/>
             <em className="text-info">Element {currentElement}'s selector includes unknown type <code className="selector type">{invalidHTMLType.selector}</code>.</em>
@@ -319,7 +345,7 @@ var FormattedSelectorValidation = React.createClass({
         
           if (!more)
             invalidHTML.push(
-              <li>
+              <li key={index}>
                 Multiple unknown attributes detected.<sup>&#8224;</sup>
                 <br/>
                 <em className="text-info">Element {currentElement}'s selector includes both <code className="selector attrbute">{a1.properties.name}</code> and <code className="selector attribute">{a2.properties.name}</code>.</em>
@@ -330,7 +356,7 @@ var FormattedSelectorValidation = React.createClass({
           
           else
             invalidHTML.push(
-              <li>
+              <li key={index}>
                 Multiple unknown attributes detected.<sup>&#8224;</sup>
                 <br/>
                 <em className="text-info">Element {currentElement}'s selector includes <code className="selector attrbute">{a1.properties.name}</code>, <code className="selector attribute">{a2.properties.name}</code> and {more} other(s).</em>
@@ -341,7 +367,7 @@ var FormattedSelectorValidation = React.createClass({
         }
         else {
           invalidHTML.push(
-            <li>
+            <li key={index}>
               Unknown attribute detected.<sup>&#8224;</sup>
               <br/>
               <em className="text-info">Element {currentElement}'s selector includes <code className="selector attribute">{a1.properties.name}</code>.</em>
@@ -363,7 +389,7 @@ var FormattedSelectorValidation = React.createClass({
           
         if (!more)
           invalid.push(
-            <li>
+            <li key={index}>
               Selectors should only ever include <strong>one</strong> type <em>or</em> universal selector.
               <br/>
               <em className="text-info">Element {currentElement}'s selector includes both <code className={t1Class}>{t1}</code> and <code className={t2Class}>{t2}</code>.</em>
@@ -372,7 +398,7 @@ var FormattedSelectorValidation = React.createClass({
           
         else
           invalid.push(
-            <li>
+            <li key={index}>
               Selectors should only ever include <strong>one</strong> type <em>or</em> universal selector.
               <br/>
               <em className="text-info">Element {currentElement}'s selector includes <code className={t1Class}>{t1}</code>, <code className={t2Class}>{t2}</code> and {more} other(s).</em>
@@ -389,7 +415,7 @@ var FormattedSelectorValidation = React.createClass({
         
         if (!more)
           invalid.push(
-            <li>
+            <li key={index}>
               Selectors should only ever include <strong>one</strong> unique<sup>&#8224;</sup> ID selector.
               <br/>
               <em className="text-info">Element {currentElement}'s selector includes both <code className="selector id">{id1}</code> and <code className="selector id">{id2}</code>.</em>
@@ -400,7 +426,7 @@ var FormattedSelectorValidation = React.createClass({
         
         else
           invalid.push(
-            <li>
+            <li key={index}>
               Selectors should only ever include <strong>one</strong> unique<sup>&#8224;</sup> ID selector.
               <br/>
               <em className="text-info">Element {currentElement}'s selector includes <code className="selector id">{id1}</code>, <code className="selector id">{id2}</code> and {more} other(s).</em>
@@ -423,7 +449,7 @@ var FormattedSelectorValidation = React.createClass({
         
           if (!more)
             invalid.push(
-              <li>
+              <li key={index}>
                 Negation selectors must not contain other negation selectors or pseudo-element selectors.
                 <br/>
                 <em className="text-info">Element {currentElement}'s selector includes both <code className="selector negation">{n1.selector}</code> and <code className="selector negation">{n2.selector}</code>.</em>
@@ -432,7 +458,7 @@ var FormattedSelectorValidation = React.createClass({
           
           else
             invalid.push(
-              <li>
+              <li key={index}>
                 Negation selectors must not contain other negation selectors or pseudo-element selectors.
                 <br/>
                 <em className="text-info">Element {currentElement}'s selector includes <code className="selector negation">{n1.selector}</code> and <code className="selector negation">{n2.selector}</code> and {more} other(s).</em>
@@ -441,7 +467,7 @@ var FormattedSelectorValidation = React.createClass({
         }
         else {
           invalid.push(
-            <li>
+            <li key={index}>
               Negation selectors must not contain other negation selectors or pseudo-element selectors.
               <br/>
               <em className="text-info">Element {currentElement}'s selector includes <code className="selector negation">{n1.selector}</code>.</em>
@@ -603,9 +629,38 @@ var FormattedSelectorSequence = React.createClass({
   render: function() {
     var selectors = this.props.selectors;
     
-    if (!selectors || !selectors.elements || !selectors.elements.detailed || !selectors.elements.detailed.length)
-      return (<div id="formatted-selector-area"></div>);
+    if (selectors && selectors.invalidSequenceArray) {
+      var invalidSequence = new Array(selectors.invalidSequenceArray.length);
       
+      selectors.invalidSequenceArray.forEach(function(selectorObj, index) {
+        if (selectorObj.text) {
+          if (selectorObj.valid)
+            invalidSequence.push(
+              <span key={index} className="text-muted">{selectorObj.text}</span>
+            );
+          else 
+            invalidSequence.push(
+              <span key={index} className="invalid-selector-part">{selectorObj.text}</span>
+            );
+        }
+      });
+      
+      return (
+        <div id="formatted-selector-area">
+          <div className="alert alert-danger">
+            <i className="fa fa-exclamation-circle"></i> The passed-in selector is invalid.
+          </div>
+          <p>Invalid parts are highlighted below:</p>
+          <pre>{invalidSequence}</pre>
+          <div className="alert alert-warning">
+            <i className="fa fa-warning"></i> In-depth information as to <em>why</em> this selector sequence is invalid is outside of the scope of selectors.io until a later release. If you believe this selector <em>is</em> valid and that this error has been generated incorrectly, please raise an issue on the GitHub repository at <i className="fa fa-bug"></i> <a href="https://github.com/selectors/selectors.io/issues">github.com/selectors/selectors.io/issues</a>, remembering to include the exact selector you used to generate this message so that it can be replicated.
+          </div>
+        </div>
+      );
+    }
+    else if (!selectors || !selectors.elements || !selectors.elements.detailed || !selectors.elements.detailed.length)
+      return (<div id="formatted-selector-area"></div>);
+    
     var
       onValidInput = this.props.onValidInput,
       elements = selectors.elements.detailed,
@@ -677,7 +732,7 @@ var SelectorSequenceSummary = React.createClass({
               break;
             case "type":
             case "universal":
-              type = simpleSelector;
+              type = selector;
               break;
             case "id":
               id = simpleSelector;
@@ -710,10 +765,38 @@ var SelectorSequenceSummary = React.createClass({
         elementRelation = <span><i className="fa fa-check"></i> Selected</span>;
       }
       
-      if (type && type !== "*")
-        r.type = <span>any <code className="selector type">&lt;{type}&gt;</code> element</span>;
-      else if (type === "*")
-        r.type = <span>any element (<code className="selector universal">*</code>)</span>
+      if (type) {
+        var
+          suffix,
+          actualType
+        ;
+        
+        if (type.namespace !== null) {
+          actualType = type.selector.replace(type.namespace + "|", "");
+          
+          switch (type.namespace) {
+            case "":
+              suffix = <span> which isn't part of any namespace,</span>
+              break;
+            case "*":
+              suffix = <span> which is part of any namespace (<code className="selector type">*</code>),</span>
+              break;
+            default:
+              suffix = <span> which is part of the <code className="selector type">{type.namespace}</code> namespace,</span>
+              break;
+          }
+        }
+        else {
+          actualType = type.selector
+        }
+        
+        if (actualType !== "*")
+          r.type = (
+            <span>any <code className="selector type">&lt;{actualType}&gt;</code> element{suffix}</span>
+          );
+        else if (actualType === "*")
+          r.type = <span>any element (<code className="selector universal">*</code>){suffix}</span>
+      }
       else
         r.type = <span>any element</span>;
         
@@ -922,14 +1005,13 @@ var SelectorsIOMain = React.createClass({
     }
     else {
       this.setState({
-        inputCooldownActive: true,
-        selectors: null
+        inputCooldownActive: true
       });
     }
     
     var self = this;
     
-    this.updateTimer = setTimeout(function() {     
+    this.updateTimer = setTimeout(function() {
       var data = new core.SelectorsIO(input);
        
       self.updateTimer = null;
@@ -960,24 +1042,38 @@ var SelectorsIOMain = React.createClass({
     });
   },
   
-  setSelectorInput: function(value) {    
-    var
-      data = new core.SelectorsIO(value),
-      self = this
-    ;
-    
+  setSelectorInput: function(value) {
     this.setState({
-      input: value,
-      activeIndex: 0,
-      data: data,
-      inputCooldownActive: false,
-      sequences: data.selectorSequences,
-      canDeconstruct: false
-    });
+      input: value
+    })
     
-    setTimeout(function() {
+    if (this.updateTimer) {
+      window.clearTimeout(this.updateTimer);
+      this.updateTimer = null;
+    }
+    else {
+      this.setState({
+        inputCooldownActive: true
+      });
+    }
+    
+    var self = this;
+    
+    this.updateTimer = setTimeout(function() {
+      var data = new core.SelectorsIO(value);
+       
+      self.updateTimer = null;
+      
+      self.setState({
+        activeIndex: 0,
+        data: data,
+        inputCooldownActive: false,
+        sequences: data.selectorSequences,
+        canDeconstruct: false
+      });
+      
       self.handleSequenceClick(0);
-    }, 100);
+    }, 1000);
   },
 
   render: function() {
@@ -1039,15 +1135,18 @@ var SelectorsIOMain = React.createClass({
         </div>
       );
     }
+    else if (this.state.inputCooldownActive) {
+      deconstructionPane = (
+        <div className="alert alert-warning">
+          <i className="fa fa-cog fa-spin"></i> Processing...
+        </div>
+      )
+    }
     else {
       var 
         self = this,
         popularExamples = [],
         popularSelectors = [
-          {
-            description: "Normalize.css",
-            selectorSequence: "audio:not([controls])"
-          },
           {
             description: "Bootstrap",
             selectorSequence: ".list-group-item > .badge + .badge"
@@ -1059,6 +1158,10 @@ var SelectorsIOMain = React.createClass({
           {
             description: "The Selectors Level 3 W3C Recommendation",
             selectorSequence: "ns|*"
+          },
+          {
+            description: "Normalize.css",
+            selectorSequence: "audio:not([controls])"
           }
         ]
       ;
@@ -1090,16 +1193,16 @@ var SelectorsIOMain = React.createClass({
               <h2>Welcome</h2>
               <p><strong>Selectors.io</strong> has only recently been launched and is still in a very beta-esque state.</p>
               <p>
-                It's open-sourced on <i className="fa fa-github"></i> GitHub at <a href="https://github.com/selectors/io">github.com/selectors/io</a>.
+                It's open-sourced on <i className="fa fa-github"></i> GitHub at <a href="https://github.com/selectors/selectors.io">github.com/selectors/selectors.io</a>.
                 <br/>
-                If you find any bugs, feel free to report them at <i className="fa fa-bug"></i> <a href="https://github.com/selectors/io/issues">github.com/selectors/io/issues</a>.
+                If you find any bugs, feel free to report them at <i className="fa fa-bug"></i> <a href="https://github.com/selectors/selectors.io/issues">github.com/selectors/selectors.io/issues</a>.
               </p>
             </article>
             <h4>Examples</h4>
             <p>
               If you're lost for inspiration, you can click on any of the below examples to give Selectors.io a try!
               <br/>
-              <span className="text-muted">Note that you can get back to this list at any point by clicking anywhere on the header.</span>
+              <span className="text-muted">Note that you can get back to this list at any point by clicking the <i className="fa fa-undo"></i> button.</span>
             </p>
             <blockquote>
               {popularExamples}

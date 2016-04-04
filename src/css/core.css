@@ -112,18 +112,30 @@ blockquote small {
 #selector-input textarea {
   font-family: 'Source Code Pro', monospace;
   font-size: 16px;
-  min-height: 64px;
+  min-height: 72px;
   resize: vertical;
+}
+#selector-input .btn[disabled] {
+  opacity: 0.4;
+}
+#selector-input .btn-warning[disabled] {
+  background: #f0ad4e;
+}
+#selector-input .btn-primary {
+  margin-top: 4px;
+}
+#selector-input .btn-primary[disabled] {
+  background: #337ab7;
 }
 #selector-input span.cooldown {
   bottom: -20px;
   color: #90A4AE;
   font-size: 14px;
-  position: absolute;
-  right: 0;
-  opacity: 0;
   line-height: 20px;
+  opacity: 0;
   overflow: hidden;
+  position: absolute;
+  right: 15px;
   text-align: right;
   transition: opacity 0.1s;
 }
@@ -211,6 +223,11 @@ blockquote small {
     cursor: default;
     padding: 4px 6px;
   }
+}
+#deconstructed-area #formatted-selector-area .invalid-selector-part {
+  color: #F44336;
+  position: relative;
+  text-decoration: underline;
 }
 #deconstructed-area #formatted-selector-area pre {
   counter-reset: formatted;
