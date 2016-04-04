@@ -66,7 +66,7 @@ var SelectorInput = React.createClass({
             <textarea
               autoFocus
               className="form-control"
-              placeholder="Enter your CSS selector here..."
+              placeholder="Type or paste in your CSS selector here..."
               value={this.props.input}
               ref="input"
               onChange={this.handleChange}
