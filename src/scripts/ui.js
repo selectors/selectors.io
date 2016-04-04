@@ -30,6 +30,7 @@ var SelectorInput = React.createClass({
     });
     
     this.props.onUserInput("");
+    ReactDOM.findDOMNode(this.refs.input).focus(); 
   },
   
   redo: function() {
@@ -995,37 +996,49 @@ var SelectorsIOMain = React.createClass({
   },
   
   handleUserInput: function(input) {
-    this.setState({
-      input: input
-    })
-    
-    if (this.updateTimer) {
-      window.clearTimeout(this.updateTimer);
-      this.updateTimer = null;
+    if (!input) {
+      this.setState({
+        activeIndex: 0,
+        data: null,
+        input: '',
+        inputCooldownActive: false,
+        sequences: null,
+        canDeconstruct: false
+      });
     }
     else {
       this.setState({
-        inputCooldownActive: true
-      });
+        input: input
+      })
+      
+      if (this.updateTimer) {
+        window.clearTimeout(this.updateTimer);
+        this.updateTimer = null;
+      }
+      else {
+        this.setState({
+          inputCooldownActive: true
+        });
+      }
+      
+      var self = this;
+      
+      this.updateTimer = setTimeout(function() {
+        var data = new core.SelectorsIO(input);
+        
+        self.updateTimer = null;
+        
+        self.setState({
+          activeIndex: 0,
+          data: data,
+          inputCooldownActive: false,
+          sequences: data.selectorSequences,
+          canDeconstruct: false
+        });
+        
+        self.handleSequenceClick(0);
+      }, 1000);
     }
-    
-    var self = this;
-    
-    this.updateTimer = setTimeout(function() {
-      var data = new core.SelectorsIO(input);
-       
-      self.updateTimer = null;
-      
-      self.setState({
-        activeIndex: 0,
-        data: data,
-        inputCooldownActive: false,
-        sequences: data.selectorSequences,
-        canDeconstruct: false
-      });
-      
-      self.handleSequenceClick(0);
-    }, 1000);
   },
   
   handleSequenceClick: function(index) {    
