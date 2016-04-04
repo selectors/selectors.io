@@ -1191,7 +1191,9 @@ var SelectorsIOMain = React.createClass({
             <hr/>
             <article id="welcome">
               <h2>Welcome</h2>
-              <p><strong>Selectors.io</strong> has only recently been launched and is still in a very beta-esque state.</p>
+              <p>
+                <strong>Selectors.io</strong> has only recently been launched and is still in a very beta-esque state.
+              </p>
               <p>
                 It's open-sourced on <i className="fa fa-github"></i> GitHub at <a href="https://github.com/selectors/selectors.io">github.com/selectors/selectors.io</a>.
                 <br/>
