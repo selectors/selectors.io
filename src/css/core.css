@@ -194,9 +194,13 @@ blockquote small {
   padding-top: 4px;
 }
 @media (max-width: 991px) {
+  #logo a img {
+    height: 40px;
+    width: 40px;
+  }
   #logo a h1 {
     font-size: 26px;
-    line-height: 64px;
+    line-height: 40px;
     padding: 0;
   }
   #logo a p {
