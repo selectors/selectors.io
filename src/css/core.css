@@ -194,12 +194,12 @@ blockquote small {
   padding-top: 4px;
 }
 @media (max-width: 991px) {
-  #logo h1 {
+  #logo a h1 {
     font-size: 26px;
     line-height: 64px;
     padding: 0;
   }
-  #logo p {
+  #logo a p {
     display: none;
   }
   #sequence-list ul li {
