@@ -30,77 +30,16 @@ core.SelectorsIO.prototype.changeActiveSelectorSequence = function(index) {
     
   var
     sequence = this.selectorSequences[index],
-    joinedSelectors,
-    offset = 0,
-    errorPos = 0,
-    processingString = "",
-    processingValid = true,
-    processedArray = [],
-    sequenceIsValid = true,
     elementArray
-  ;  
+  ;
   
   this.selectors.raw = s.getSelectors(sequence);
   
-  joinedSelectors = this.selectors.raw.join('');
+  var validity = checkValidity(sequence, this.selectors.raw.join(''));
   
-  for (var i = 0; i < (joinedSelectors.length > sequence.length ? joinedSelectors.length : sequence.length); i++) {
-    var
-      joined = joinedSelectors[i],
-      original = sequence[i + offset]
-    ;
-    
-    if (joined === original) {
-      if (!processingValid) {
-        processedArray.push({
-          text: processingString,
-          valid: processingValid
-        });
-        
-        processingString = "";
-        processingValid = true;
-      }
-      
-      if (original)
-        processingString += original;
-      continue;
-    }
-      
-    if (original === " " && joined !== " ") {
-      offset++;
-      i--;
-      continue;
-    }
-    
-    if (processingValid) {
-      processedArray.push({
-        text: processingString,
-        valid: processingValid
-      });
-      
-      processingString = "";
-      processingValid = false;
-    }
-    
-    if (original)
-      processingString += original;
-      
-    offset++;
-    i--;
-    
-    sequenceIsValid = false;
-  }
+  this.selectors.invalidSequenceArray = validity.isInvalid ? validity.arr : null;
   
-  
-  if (processingString)
-    processedArray.push({
-        text: processingString,
-        valid: processingValid
-    });
-  
-  this.selectors.invalidSequenceArray = sequenceIsValid ? null : processedArray;
-  
-  if (sequenceIsValid)
+  if (!validity.isInvalid)
     elementArray = s.getElements(sequence)
   
   this.selectors.elements.raw = elementArray || null;
@@ -168,4 +107,63 @@ core.SelectorsIO.prototype.getElementDetails = function(elementArray) {
 
 core.SelectorsIO.prototype.generateSummaryFromSelector = function() {
   
+}
+
+function checkValidity(stringIn, stringOut) {
+  var
+    r = {
+      arr: [],
+      isInvalid: false
+    },
+    str = "",
+    valid = true,
+    stringInLen = stringIn.length,
+    stringOutLen = stringOut.length,
+    offset = 0
+  ;
+  
+  for (var i = 0; i< stringInLen; i++) {
+    var
+      charIn = stringIn[i],
+      charOut = stringOut[i + offset],
+      isCombinator = /[>+~]/.test(charIn)
+    ;
+  
+    if (charIn === " " && charOut !== " ") {
+      offset--;
+      continue;
+    }
+    
+    if (
+      ((i === 0 || (stringInLen >= stringOutLen && i === stringInLen - 1)) && isCombinator)
+      || (charIn !== charOut)
+      || (i > 0 && isCombinator && /[>+~]/.test(stringIn[i-1]))
+    ) {
+      if (valid && str) {
+        r.arr.push({ text: str, valid: valid });
+        str = "";
+      }
+      
+      r.isInvalid = true;
+      valid = false;
+      str += charIn;
+      
+      if (charIn !== charOut)
+        offset--;
+      continue;
+    }
+    
+    if (!valid && str) {
+      r.arr.push({ text: str, valid: valid });
+      str = "";
+    }
+    
+    valid = true;
+    str += charIn;
+  }
+    
+  if (str)
+    r.arr.push({ text: str, valid: valid });
+  
+  return r;
 }
