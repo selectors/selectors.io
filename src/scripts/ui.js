@@ -31,7 +31,8 @@ var SelectorInput = React.createClass({
       url: ""
     });
     
-    history.replaceState({}, "Selectors.io", "?s=");
+    if (history && history.replaceState)
+      history.replaceState({}, "Selectors.io", "?s=");
     
     this.props.onUserInput("");
     ReactDOM.findDOMNode(this.refs.input).focus(); 
