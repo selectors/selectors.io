@@ -116,12 +116,10 @@ var SelectorSequences = React.createClass({
     if (!selectorSequences || !selectorSequences.length)
       return null
       
-    var
-      count = selectorSequences.length,
-      sequences = new Array(count),
-      sequencesPlural = "Sequence" + (count !== 1 ? "s" : "")
-      self = this
-    ;
+    var count = selectorSequences.length;
+    var sequences = new Array(count);
+    var sequencesPlural = "Sequence" + (count !== 1 ? "s" : "");
+    var self = this;
       
     selectorSequences.forEach(function (sequence, index) {
       var className = self.state.activeIndex === index ? "active" : "";
@@ -1263,6 +1261,9 @@ var SelectorsIOMain = React.createClass({
   }
 });
 
+var splashArea = document.getElementById('splash-area');
+splashArea.parentElement.removeChild(splashArea);
+  
 ReactDOM.render(
   <SelectorsIOMain />,
   document.getElementById('main-area')
