@@ -151,8 +151,8 @@ blockquote {
     opacity: 0.4;
   }
   
-  .btn-warning[disabled] {
-    background: #f0ad4e;
+  .btn-danger[disabled] {
+    background: #d9534f;
   }
   
   .btn-primary {
@@ -243,14 +243,21 @@ blockquote {
 
 @media (max-width: 991px) {
   #logo {
-    h1 {
-      font-size: 26px;
-      line-height: 64px;
-      padding: 0;
-    }
-    
-    p {
-      display: none;
+    a {
+      img {
+        height: 40px;
+        width: 40px;
+      }
+      
+      h1 {
+        font-size: 26px;
+        line-height: 40px;
+        padding: 0;
+      }
+      
+      p {
+        display: none;
+      }
     }
   }
   

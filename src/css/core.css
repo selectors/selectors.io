@@ -118,8 +118,8 @@ blockquote small {
 #selector-input .btn[disabled] {
   opacity: 0.4;
 }
-#selector-input .btn-warning[disabled] {
-  background: #f0ad4e;
+#selector-input .btn-danger[disabled] {
+  background: #d9534f;
 }
 #selector-input .btn-primary {
   margin-top: 4px;
@@ -194,12 +194,16 @@ blockquote small {
   padding-top: 4px;
 }
 @media (max-width: 991px) {
-  #logo h1 {
+  #logo a img {
+    height: 40px;
+    width: 40px;
+  }
+  #logo a h1 {
     font-size: 26px;
-    line-height: 64px;
+    line-height: 40px;
     padding: 0;
   }
-  #logo p {
+  #logo a p {
     display: none;
   }
   #sequence-list ul li {
