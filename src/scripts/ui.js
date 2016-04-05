@@ -117,13 +117,17 @@ var SelectorSequences = React.createClass({
     if (!selectorSequences || !selectorSequences.length)
       return null
       
+      
+    if (history && history.replaceState)
+      history.replaceState({}, "Selectors.io", "?s=" + selectorSequences.join(','));
+        
     var count = selectorSequences.length;
     var sequences = new Array(count);
     var sequencesPlural = "Sequence" + (count !== 1 ? "s" : "");
     var self = this;
       
     selectorSequences.forEach(function (sequence, index) {
-      var className = self.state.activeIndex && self.state.activeIndex === index ? "active" : "";
+      var className = typeof self.state.activeIndex === "number" && self.state.activeIndex === index ? "active" : "";
       
       sequences[index] = (
         <li
@@ -645,9 +649,6 @@ var FormattedSelectorSequence = React.createClass({
         }
       });
       
-      if (history && history.replaceState)
-        history.replaceState({}, "Selectors.io", "?s=" + urlParts);
-      
       return (
         <div id="formatted-selector-area">
           <div className="alert alert-danger">
@@ -672,9 +673,6 @@ var FormattedSelectorSequence = React.createClass({
       marginIncrement = 6,
       elementCount = elements.length
     ;
-    
-    if (history && history.replaceState)
-      history.replaceState({}, "Selectors.io", "?s=" + selectors.raw.join(''));
     
     elements.forEach(function(selectors, index) {
       var first = elements[index][0];
