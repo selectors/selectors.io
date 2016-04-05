@@ -118,8 +118,8 @@ blockquote small {
 #selector-input .btn[disabled] {
   opacity: 0.4;
 }
-#selector-input .btn-warning[disabled] {
-  background: #f0ad4e;
+#selector-input .btn-danger[disabled] {
+  background: #d9534f;
 }
 #selector-input .btn-primary {
   margin-top: 4px;
