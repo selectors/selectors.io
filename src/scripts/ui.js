@@ -122,7 +122,7 @@ var SelectorSequences = React.createClass({
     var self = this;
       
     selectorSequences.forEach(function (sequence, index) {
-      var className = self.state.activeIndex === index ? "active" : "";
+      var className = self.state.activeIndex && self.state.activeIndex === index ? "active" : "";
       
       sequences[index] = (
         <li
@@ -644,7 +644,8 @@ var FormattedSelectorSequence = React.createClass({
         }
       });
       
-      history.replaceState({}, "Selectors.io", "?s=" + urlParts);
+      if (history && history.replaceState)
+        history.replaceState({}, "Selectors.io", "?s=" + urlParts);
       
       return (
         <div id="formatted-selector-area">
@@ -671,7 +672,8 @@ var FormattedSelectorSequence = React.createClass({
       elementCount = elements.length
     ;
     
-    history.replaceState({}, "Selectors.io", "?s=" + selectors.raw.join(''));
+    if (history && history.replaceState)
+      history.replaceState({}, "Selectors.io", "?s=" + selectors.raw.join(''));
     
     elements.forEach(function(selectors, index) {
       var first = elements[index][0];
@@ -1078,7 +1080,8 @@ var SelectorsIOMain = React.createClass({
       input: value
     });
     
-    history.replaceState({}, "Selectors.io", "?s=" + encodeURI(value));
+    if (history && history.replaceState)
+      history.replaceState({}, "Selectors.io", "?s=" + encodeURI(value));
     
     if (this.updateTimer) {
       window.clearTimeout(this.updateTimer);
