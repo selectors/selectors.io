@@ -48,7 +48,7 @@ var SelectorInput = React.createClass({
     this.setState({
       lastValue: this.refs.input.value,
       msRemaining: 1.0,
-      url: encodeURI(value)
+      url: encodeURIComponent(value)
     });
     
     this.interval = setInterval(this.tick, 100);
@@ -119,7 +119,7 @@ var SelectorSequences = React.createClass({
       
       
     if (history && history.replaceState)
-      history.replaceState({}, "Selectors.io", "?s=" + selectorSequences.join(','));
+      history.replaceState({}, "Selectors.io", "?s=" + encodeURIComponent(selectorSequences.join(',')));
         
     var count = selectorSequences.length;
     var sequences = new Array(count);
@@ -805,7 +805,7 @@ var SelectorSequenceSummary = React.createClass({
         r.type = <span>any element</span>;
         
       if (id)
-        r.id = <span> whose unique <code>id</code> attribute is exactly <code className="selector id">{id}</code></span>
+        r.id = <span> whose unique <code className="selector id">id</code> attribute is exactly <code>&ldquo;{id.replace('#', '')}&rdquo;</code></span>
         
       if (classes.length) {
         var classesText = "";
@@ -813,13 +813,13 @@ var SelectorSequenceSummary = React.createClass({
         if (id)
           classesText += ", and";
           
-        classesText += " whose <code>class</code> attribute contains "
+        classesText += " whose <code class='selector class'>class</code> attribute contains "
         
         classes.forEach(function(className, index) {
           if (index > 0)
             classesText += (index === classes.length - 1 ? " and " : ", ")
             
-          classesText += "<code class='selector class'>" + className + "</code>";
+          classesText += "<code>&ldquo;" + className + "&rdquo;</code>";
         });
           
         classesText = {__html: classesText};
@@ -987,7 +987,7 @@ var SelectorsIOMain = React.createClass({
   },
   
   setInitialState: function() {
-    var s = window.location.search ? decodeURI(window.location.search.substr(3, window.location.search.length)) : "";
+    var s = window.location.search ? decodeURIComponent(window.location.search.replace('\\#', '#').substr(3, window.location.search.length)) : "";
     
     if (!s)
       return {
@@ -1080,7 +1080,7 @@ var SelectorsIOMain = React.createClass({
     });
     
     if (history && history.replaceState)
-      history.replaceState({}, "Selectors.io", "?s=" + encodeURI(value));
+      history.replaceState({}, "Selectors.io", "?s=" + encodeURIComponent(value));
     
     if (this.updateTimer) {
       window.clearTimeout(this.updateTimer);
