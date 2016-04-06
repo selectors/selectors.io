@@ -1,3 +1,9 @@
+/*!
+ * Selectors.io - https://github.com/selectors/selectors.io
+
+ * Last built: Wednesday, 6th April 2016; 9:54:03 AM
+ */
+
 var SelectorInput = React.createClass({
   getInitialState: function() {    
     return {
@@ -92,8 +98,7 @@ var SelectorInput = React.createClass({
       </div>
     );
   }
-});
-
+});;
 var SelectorSequences = React.createClass({
   getInitialState: function() {
     return {
@@ -152,8 +157,7 @@ var SelectorSequences = React.createClass({
       </span>
     )
   }
-});
-
+});;
 var FormattedSelectorValidation = React.createClass({
   componentDidMount: function() {    
     var domNode = ReactDOM.findDOMNode(this)
@@ -588,8 +592,7 @@ var FormattedSelectorValidation = React.createClass({
       </div>
     );
   }
-});
-
+});;
 var FormattedElement = React.createClass({
   render: function() {
     var selectors = this.props.selectors;
@@ -618,8 +621,7 @@ var FormattedElement = React.createClass({
       </div>
     )
   }
-});
-
+});;
 var FormattedSelectorSequence = React.createClass({
   handleValidInput: function(valid) {
     this.props.onValidInput(valid);
@@ -692,8 +694,7 @@ var FormattedSelectorSequence = React.createClass({
       </div>
     )
   }
-});
-
+});;
 var SelectorSequenceSummary = React.createClass({
   render: function() {
     var selectors = this.props.selectors;
@@ -977,8 +978,7 @@ var SelectorSequenceSummary = React.createClass({
       </blockquote>
     )
   }
-});
-
+});;
 var SelectorsIOMain = React.createClass({
   updateTimer: null,
   
@@ -1261,8 +1261,7 @@ var SelectorsIOMain = React.createClass({
       </div>
     );
   }
-});
-
+});;
 var splashArea = document.getElementById('splash-area');
 splashArea.parentElement.removeChild(splashArea);
   
